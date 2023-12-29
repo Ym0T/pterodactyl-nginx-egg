@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2023-12-29T15:19:45+01:00",
+    "exported_at": "2023-12-30T00:51:06+01:00",
     "name": "Nginx",
     "author": "YmoT@tuta.com",
     "description": "NGINX is a free, open-source, high-performance HTTP server and reverse proxy, as well as an IMAP\/POP3 proxy server. NGINX is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption.",
@@ -25,7 +25,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget\r\ncd \/mnt\/server\r\n\r\necho -e \"[SETUP] Create folders\"\r\nmkdir logs && mkdir tmp && mkdir www\r\n\r\necho -e \"[SETUP] Copy Github files\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg.git .\/gtemp > \/dev\/null 2>&1\r\n\r\ncp -r .\/gtemp\/nginx .\r\ncp -r .\/gtemp\/php .\r\ncp .\/gtemp\/nginx.sh . && rm -R .\/gtemp\r\nchmod +x nginx.sh\r\n\r\necho \"${PHP_VERSION}\" > \"php_version.txt\"\r\n\r\n\r\n\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]\r\nthen\r\n    echo -e \"[SETUP] Install Wordpress\"\r\n    cd \/mnt\/server\/www\r\n    wget -q > \/dev\/null 2>&1 http:\/\/wordpress.org\/latest.tar.gz\r\n    tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n    mv wordpress\/* .\r\n    rm -rf wordpress latest.tar.gz\r\n   echo \"[SETUP]  Install complete go to http:\/\/ip:port\/wp-admin \"\r\n   exit 0\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed\"",
+            "script": "#!\/bin\/bash\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget\r\ncd \/mnt\/server\r\n\r\necho -e \"[SETUP] Create folders\"\r\nmkdir logs && mkdir tmp && mkdir www\r\n\r\necho -e \"[SETUP] Copy Github files\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg.git .\/gtemp > \/dev\/null 2>&1\r\n\r\ncp -r .\/gtemp\/nginx .\r\ncp -r .\/gtemp\/php .\r\ncp .\/gtemp\/nginx.sh . && rm -R .\/gtemp\r\nchmod +x nginx.sh\r\n\r\necho \"${PHP_VERSION}\" > \"php_version.txt\"\r\n\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]\r\nthen\r\n    echo \"[SETUP] Install Wordpress\"\r\n    cd \/mnt\/server\/www\r\n    wget -q > \/dev\/null 2>&1 http:\/\/wordpress.org\/latest.tar.gz\r\n    tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n    mv wordpress\/* .\r\n    rm -rf wordpress latest.tar.gz\r\n    echo \"[SETUP] Wordpress installed - http:\/\/ip:port\/wp-admin \"\r\n    exit 0\r\nelse\r\n    echo \"<?php phpinfo(); ?>\" > \"www\/index.php\"\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed\"",
             "container": "debian:bookworm-slim",
             "entrypoint": "bash"
         }
