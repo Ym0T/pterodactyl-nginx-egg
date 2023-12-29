@@ -1,0 +1,75 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2023-12-29T15:19:45+01:00",
+    "name": "Nginx",
+    "author": "YmoT@tuta.com",
+    "description": "NGINX is a free, open-source, high-performance HTTP server and reverse proxy, as well as an IMAP\/POP3 proxy server. NGINX is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption.",
+    "features": null,
+    "docker_images": {
+        "ghcr.io\/ym0t\/nginx_php:8.2": "ghcr.io\/ym0t\/nginx_php:8.2",
+        "ghcr.io\/ym0t\/nginx_php:8.1": "ghcr.io\/ym0t\/nginx_php:8.1",
+        "ghcr.io\/ym0t\/nginx_php:8.0": "ghcr.io\/ym0t\/nginx_php:8.0",
+        "ghcr.io\/ym0t\/nginx_php:7.3": "ghcr.io\/ym0t\/nginx_php:7.3"
+    },
+    "file_denylist": [],
+    "startup": "{{STARTUP_COMMAND}}",
+    "config": {
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
+        "startup": "{\r\n    \"done\": \"[Docker] Services successfully launched\"\r\n}",
+        "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
+        "stop": "^C & ^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget\r\ncd \/mnt\/server\r\n\r\necho -e \"[SETUP] Create folders\"\r\nmkdir logs && mkdir tmp && mkdir www\r\n\r\necho -e \"[SETUP] Copy Github files\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg.git .\/gtemp > \/dev\/null 2>&1\r\n\r\ncp -r .\/gtemp\/nginx .\r\ncp -r .\/gtemp\/php .\r\ncp .\/gtemp\/nginx.sh . && rm -R .\/gtemp\r\nchmod +x nginx.sh\r\n\r\necho \"${PHP_VERSION}\" > \"php_version.txt\"\r\n\r\n\r\n\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]\r\nthen\r\n    echo -e \"[SETUP] Install Wordpress\"\r\n    cd \/mnt\/server\/www\r\n    wget -q > \/dev\/null 2>&1 http:\/\/wordpress.org\/latest.tar.gz\r\n    tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n    mv wordpress\/* .\r\n    rm -rf wordpress latest.tar.gz\r\n   echo \"[SETUP]  Install complete go to http:\/\/ip:port\/wp-admin \"\r\n   exit 0\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed\"",
+            "container": "debian:bookworm-slim",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Startup Command",
+            "description": "The startup file for Nginx.",
+            "env_variable": "STARTUP_COMMAND",
+            "default_value": ".\/nginx.sh",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Wordpress",
+            "description": "Enable or disable Wordpress<br>\r\n\r\n0 = false (default)<br>\r\n1 = true",
+            "env_variable": "WORDPRESS",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP Version",
+            "description": "Select the correct PHP version! See the tag behind the Docker image. <br>\r\nExample:<br>\r\nSelected image: ghcr.io\/ym0t\/nginx_php:8.2<br>\r\nEnter in the field: 8.2<br><br>\r\nSelected image: ghcr.io\/ym0t\/nginx_php:8.1<br>\r\nEnter in the field: 8.1<br>",
+            "env_variable": "PHP_VERSION",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:3",
+            "field_type": "text"
+        },
+        {
+            "name": "Memory_limit",
+            "description": "Change the memory_limit value from the php.ini file",
+            "env_variable": "memory_limit",
+            "default_value": "128M",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        }
+    ]
+}
