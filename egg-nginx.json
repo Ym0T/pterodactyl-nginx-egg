@@ -18,7 +18,7 @@
     "file_denylist": [],
     "startup": "{{STARTUP_COMMAND}}",
     "config": {
-        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"    listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"[Docker] Services successfully launched\"\r\n}",
         "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
         "stop": "^C & ^C"
