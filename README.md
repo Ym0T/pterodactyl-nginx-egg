@@ -27,20 +27,33 @@ You can select the desired PHP version.
 Here the "www" folder is used as a public folder, which can be accessed by everyone. Added files can be accessed in this folder.
 
 
-## How to use https://
-Go to the file: /home/container/nginx/conf.d/default.conf
 
-Change "listen" to: listen <YOUR_PORT> ssl;
+## How to use https://
+Go to the file: 
+```bash
+/home/container/nginx/conf.d/default.conf
+```
+
+
+Change "listen" to: 
+```bash
+listen <YOUR_PORT> ssl;
+```
 Please also change the spacer distance. Otherwise the "listen" will be overwritten each time the egg is restarted.
 
 Add the following lines:
+```bash
     ssl_certificate /home/container/your_cert.crt;
     ssl_certificate_key /home/container/your_cert_key.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
+```
 
 Adjust the lines accordingly.
-Furthermore, if not already done, adjust to your domain: "server_name www.example.com";
+Furthermore, if not already done, adjust to your domain: 
+```bash
+server_name www.example.com;
+```
 
 
 ## License
