@@ -6,6 +6,7 @@ Nginx web server egg with PHP and optional Wordpress installation.
 
 ## Features
 You can select the desired PHP version.
+- ✅ 8.3
 - ✅ 8.2
 - ✅ 8.1
 - ✅ 8.0
