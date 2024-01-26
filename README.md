@@ -58,7 +58,7 @@ server_name www.example.com;
 ```
 
 
-## How to use https://
+## PHP extensions
 PHP extensions used:
 ```bash
 Core, date, libxml, openssl, pcre, zlib, filter, hash, Reflection, SPL, session, sodium, standard, cgi-fcgi, mysqlnd, PDO, psr, xml, bcmath, calendar, ctype, curl, dom, mbstring, fileinfo, ftp, gettext, gmp, iconv, igbinary, imagick, imap, interbase, intl, json, ldap, lua, lz4, exif, mcrypt, memcache, mongodb, msgpack, mysqli, odbc, pcov, pdo_dblib, PDO_Firebird, pdo_mysql, PDO_ODBC, pdo_pgsql, pdo_sqlite, pgsql, Phar, pinba, posix, propro, pspell, readline, shmop, SimpleXML, soap, sockets, sqlite3, sysvmsg, sysvsem, sysvshm, tokenizer, wddx, xmlreader, xmlwriter, xsl, zip, mailparse, memcached, inotify, maxminddb, protobuf, phalcon, Zend OPcache
