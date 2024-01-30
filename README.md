@@ -59,11 +59,11 @@ server_name www.example.com;
 
 
 ## PHP extensions
-PHP extensions used:
+PHP extensions of PHP version 8.3:
 ```bash
-Core, date, libxml, openssl, pcre, zlib, filter, hash, Reflection, SPL, session, sodium, standard, cgi-fcgi, mysqlnd, PDO, psr, xml, bcmath, calendar, ctype, curl, dom, mbstring, fileinfo, ftp, gettext, gmp, iconv, igbinary, imagick, imap, interbase, intl, json, ldap, lua, lz4, exif, mcrypt, memcache, mongodb, msgpack, mysqli, odbc, pcov, pdo_dblib, PDO_Firebird, pdo_mysql, PDO_ODBC, pdo_pgsql, pdo_sqlite, pgsql, Phar, pinba, posix, propro, pspell, readline, shmop, SimpleXML, soap, sockets, sqlite3, sysvmsg, sysvsem, sysvshm, tokenizer, wddx, xmlreader, xmlwriter, xsl, zip, mailparse, memcached, inotify, maxminddb, protobuf, phalcon, Zend OPcache
+Core, date, libxml, openssl, pcre, zlib, filter, hash, json, random, Reflection, SPL, session, standard, sodium, cgi-fcgi, mysqlnd, PDO, psr, xml, bcmath, calendar, ctype, curl, dom, mbstring, FFI, fileinfo, ftp, gd, gettext, gmp, iconv, igbinary, imagick, imap, intl, ldap, exif, memcache, mongodb, msgpack, mysqli, odbc, pcov, pdo_mysql, PDO_ODBC, pdo_pgsql, pdo_sqlite, pgsql, Phar, posix, ps, pspell, readline, shmop, SimpleXML, soap, sockets, sqlite3, sysvmsg, sysvsem, sysvshm, tokenizer, xmlreader, xmlwriter, xsl, zip, mailparse, memcached, inotify, maxminddb, protobuf, Zend OPcache
 ```
-
+Small differences in the extensions between the PHP versions
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
