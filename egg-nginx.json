@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2023-12-30T00:51:06+01:00",
+    "exported_at": "2024-01-30T23:15:35+01:00",
     "name": "Nginx",
     "author": "YmoT@tuta.com",
     "description": "NGINX is a free, open-source, high-performance HTTP server and reverse proxy, as well as an IMAP\/POP3 proxy server. NGINX is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption.",
@@ -19,7 +19,7 @@
     "file_denylist": [],
     "startup": "{{STARTUP_COMMAND}}",
     "config": {
-        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"    listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"    listen {{server.build.default.port}};\",\r\n            \"    #access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    #error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\",\r\n            \"    error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"[Docker] Services successfully launched\"\r\n}",
         "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
         "stop": "^C & ^C"
@@ -65,11 +65,31 @@
         {
             "name": "Memory_limit",
             "description": "Change the memory_limit value from the php.ini file",
-            "env_variable": "memory_limit",
+            "env_variable": "MEMORY_LIMIT",
             "default_value": "128M",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Access Log (console)",
+            "description": "Deactivate or activate the access log in the console. If this option is activated, the nginx access logs are displayed in the console.<br>\r\n<Empty> = deactivated (default)<br>\r\n# = activated",
+            "env_variable": "CONSOLE_ACCESS_LOG",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|regex:\/^#$\/",
+            "field_type": "text"
+        },
+        {
+            "name": "Error Log (console)",
+            "description": "Deactivate or activate the error log in the console. If this option is activated, the nginx error logs are displayed in the console.<br>\r\n<Empty> = deactivated (default)<br>\r\n# = activated",
+            "env_variable": "CONSOLE_ERROR_LOG",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|regex:\/^#$\/",
             "field_type": "text"
         }
     ]
