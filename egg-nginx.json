@@ -10,11 +10,7 @@
     "description": "NGINX is a free, open-source, high-performance HTTP server and reverse proxy, as well as an IMAP\/POP3 proxy server. NGINX is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption.",
     "features": null,
     "docker_images": {
-        "ghcr.io\/ym0t\/nginx_php:8.3": "ghcr.io\/ym0t\/nginx_php:8.3",
-        "ghcr.io\/ym0t\/nginx_php:8.2": "ghcr.io\/ym0t\/nginx_php:8.2",
-        "ghcr.io\/ym0t\/nginx_php:8.1": "ghcr.io\/ym0t\/nginx_php:8.1",
-        "ghcr.io\/ym0t\/nginx_php:8.0": "ghcr.io\/ym0t\/nginx_php:8.0",
-        "ghcr.io\/ym0t\/nginx_php:7.3": "ghcr.io\/ym0t\/nginx_php:7.3"
+        "ghcr.io\/gergoeb\/pterodactyl-nginx-egg:latest": "ghcr.io\/gergoeb\/pterodactyl-nginx-egg:latest"
     },
     "file_denylist": [],
     "startup": "{{STARTUP_COMMAND}}",
