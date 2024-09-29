@@ -35,4 +35,4 @@ jobs:
         platforms: linux/amd64,linux/arm64  # Target architectures
         push: true
         tags: |
-          ghcr.io/GergoEB/nginx-php:latest  # Ensure correct tag format
+          ghcr.io/gergoeb/nginxphp:v1  # Ensure correct tag format
