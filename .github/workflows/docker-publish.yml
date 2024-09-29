@@ -1,0 +1,38 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull requests to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Set up Docker Buildx for multi-platform builds
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # Log in to the GitHub Container Registry (ghcr.io)
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}  # Uses the GitHub token to authenticate
+
+    # Build and push Docker image for multi-architecture (amd64 and arm64)
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64  # Target platforms
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}:latest  # Replace with your desired image tag
