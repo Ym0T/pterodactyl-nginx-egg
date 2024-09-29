@@ -35,4 +35,4 @@ jobs:
         platforms: linux/amd64,linux/arm64  # Target platforms
         push: true
         tags: |
-          ${{ github.repository }}:latest  # Replace with your desired image tag
+          nginxphp:latest  # Replace with your desired image tag
