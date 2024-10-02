@@ -4,19 +4,19 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2024-10-02T21:37:10+02:00",
+    "exported_at": "2024-10-02T22:32:15+02:00",
     "name": "Nginx",
     "author": "YmoT@tuta.com",
     "description": "NGINX is a free, open-source, high-performance HTTP server and reverse proxy, as well as an IMAP\/POP3 proxy server. NGINX is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption.",
     "features": null,
     "docker_images": {
-        "ghcr.io\/ym0t\/nginx_php:8.3": "ghcr.io\/ym0t\/nginx_php:8.3",
-        "ghcr.io\/ym0t\/nginx_php:8.2": "ghcr.io\/ym0t\/nginx_php:8.2",
-        "ghcr.io\/ym0t\/nginx_php:8.1": "ghcr.io\/ym0t\/nginx_php:8.1",
-        "ghcr.io\/ym0t\/nginx_php:8.0": "ghcr.io\/ym0t\/nginx_php:8.0"
+        "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.3-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.3-latest",
+        "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.2-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.2-latest",
+        "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.1-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.1-latest",
+        "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.0-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.0-latest"
     },
     "file_denylist": [],
-    "startup": "if {{GIT_STATUS}}; then {{STARTUP_COMMAND_GIT}}; fi; echo \"{{PHP_VERSION}}\" > \"php_version.txt\"; {{STARTUP_COMMAND}};",
+    "startup": "if [ {{GIT_STATUS}} == 1 ]; then {{STARTUP_COMMAND_GIT}}; fi; echo \"{{PHP_VERSION}}\" > \"php_version.txt\"; {{STARTUP_COMMAND}};",
     "config": {
         "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"[Docker] Services successfully launched\"\r\n}",
