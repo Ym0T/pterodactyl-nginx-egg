@@ -26,13 +26,12 @@ Nginx web server egg with PHP, optional Wordpress installation and git support.
 ## FAQ
 
 #### In which folder do I upload my files for my site?
-Here the "www" folder is used as a public folder, which can be accessed by everyone. Added files can be accessed in this folder.
+The "www" folder is used as a public folder. There you can add your PHP, HTML, CSS, JS and so on files that are required for the public or for the operation of the site.
 
 ## How do I use Git support?
 
 #### Instructions for Git support
 Git support allows you to automatically clone a Git repository into the www folder of your web server and apply the latest changes every time you restart (git pull). This is how it works:
-Prerequisites:
 
 #### Prerequisites:
 - Git Status must be enabled to use Git.
