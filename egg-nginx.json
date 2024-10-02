@@ -1,28 +1,28 @@
 {
-    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY Jexactyl PANEL - jexactyl.com",
     "meta": {
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2024-01-30T23:15:35+01:00",
+    "exported_at": "2024-10-02T17:55:02+01:00",
     "name": "Nginx",
-    "author": "YmoT@tuta.com",
+    "author": "GergoEB",
     "description": "NGINX is a free, open-source, high-performance HTTP server and reverse proxy, as well as an IMAP\/POP3 proxy server. NGINX is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption.",
     "features": null,
     "docker_images": {
-        "ghcr.io\/gergoeb\/pterodactyl-nginx-egg:latest": "ghcr.io\/gergoeb\/pterodactyl-nginx-egg:latest"
+        "ghcr.io\/gergoeb\/pterodactyl-nginx-egg:main": "ghcr.io\/gergoeb\/pterodactyl-nginx-egg:main"
     },
     "file_denylist": [],
     "startup": "{{STARTUP_COMMAND}}",
     "config": {
-        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"    listen {{server.build.default.port}};\",\r\n            \"    #access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    #error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\",\r\n            \"    error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.MEMORY_LIMIT}};\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"    listen {{server.build.default.port}};\",\r\n            \"    #access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    #error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\",\r\n            \"    error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\",\r\n            \"    set_real_ip_from\": \"    set_real_ip_from {{env.REVERSE_PROXY_IP}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.MEMORY_LIMIT}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"[Docker] Services successfully launched\"\r\n}",
         "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
         "stop": "^C & ^C"
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget\r\ncd \/mnt\/server\r\n\r\necho -e \"[SETUP] Create folders\"\r\nmkdir logs && mkdir tmp && mkdir www\r\n\r\necho -e \"[SETUP] Copy Github files\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg.git .\/gtemp > \/dev\/null 2>&1\r\n\r\ncp -r .\/gtemp\/nginx .\r\ncp -r .\/gtemp\/php .\r\ncp .\/gtemp\/nginx.sh . && rm -R .\/gtemp\r\nchmod +x nginx.sh\r\n\r\necho \"${PHP_VERSION}\" > \"php_version.txt\"\r\n\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]\r\nthen\r\n    echo \"[SETUP] Install Wordpress\"\r\n    cd \/mnt\/server\/www\r\n    wget -q > \/dev\/null 2>&1 http:\/\/wordpress.org\/latest.tar.gz\r\n    tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n    mv wordpress\/* .\r\n    rm -rf wordpress latest.tar.gz\r\n    echo \"[SETUP] Wordpress installed - http:\/\/ip:port\/wp-admin \"\r\n    exit 0\r\nelse\r\n    echo \"<?php phpinfo(); ?>\" > \"www\/index.php\"\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed\"",
+            "script": "#!\/bin\/bash\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget\r\ncd \/mnt\/server\r\n\r\necho -e \"[SETUP] Create folders\"\r\nmkdir logs && mkdir tmp && mkdir www\r\n\r\necho -e \"[SETUP] Copy Github files\"\r\ngit clone https:\/\/github.com\/GergoEB\/pterodactyl-nginx-egg.git .\/gtemp > \/dev\/null 2>&1\r\n\r\ncp -r .\/gtemp\/nginx .\r\ncp -r .\/gtemp\/php .\r\ncp .\/gtemp\/nginx.sh . && rm -R .\/gtemp\r\nchmod +x nginx.sh\r\n\r\necho \"${PHP_VERSION}\" > \"php_version.txt\"\r\n\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]\r\nthen\r\n    echo \"[SETUP] Install Wordpress\"\r\n    cd \/mnt\/server\/www\r\n    wget -q > \/dev\/null 2>&1 http:\/\/wordpress.org\/latest.tar.gz\r\n    tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n    mv wordpress\/* .\r\n    rm -rf wordpress latest.tar.gz\r\n    echo \"[SETUP] Wordpress installed - http:\/\/ip:port\/wp-admin \"\r\n    exit 0\r\nelse\r\n    echo \"<?php phpinfo(); ?>\" > \"www\/index.php\"\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed\"",
             "container": "debian:bookworm-slim",
             "entrypoint": "bash"
         }
@@ -44,7 +44,7 @@
             "env_variable": "WORDPRESS",
             "default_value": "0",
             "user_viewable": true,
-            "user_editable": true,
+            "user_editable": false,
             "rules": "required|boolean",
             "field_type": "text"
         },
@@ -54,7 +54,7 @@
             "env_variable": "PHP_VERSION",
             "default_value": "",
             "user_viewable": true,
-            "user_editable": true,
+            "user_editable": false,
             "rules": "required|string|max:3",
             "field_type": "text"
         },
@@ -72,9 +72,9 @@
             "name": "Access Log (console)",
             "description": "Deactivate or activate the access log in the console. If this option is activated, the nginx access logs are displayed in the console.<br>\r\n<Empty> = deactivated (default)<br>\r\n# = activated",
             "env_variable": "CONSOLE_ACCESS_LOG",
-            "default_value": "",
+            "default_value": "#",
             "user_viewable": true,
-            "user_editable": true,
+            "user_editable": false,
             "rules": "nullable|string|regex:\/^#$\/",
             "field_type": "text"
         },
@@ -82,10 +82,20 @@
             "name": "Error Log (console)",
             "description": "Deactivate or activate the error log in the console. If this option is activated, the nginx error logs are displayed in the console.<br>\r\n<Empty> = deactivated (default)<br>\r\n# = activated",
             "env_variable": "CONSOLE_ERROR_LOG",
-            "default_value": "",
+            "default_value": "#",
             "user_viewable": true,
-            "user_editable": true,
+            "user_editable": false,
             "rules": "nullable|string|regex:\/^#$\/",
+            "field_type": "text"
+        },
+        {
+            "name": "Reverse Proxy IP Address",
+            "description": "Allows Nginx to trust XFF headers when processing requests from this IP Address",
+            "env_variable": "REVERSE_PROXY_IP",
+            "default_value": "10.0.0.131",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|ipv4",
             "field_type": "text"
         }
     ]
