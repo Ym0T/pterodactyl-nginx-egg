@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2024-01-30T23:15:35+01:00",
+    "exported_at": "2024-10-02T21:29:33+02:00",
     "name": "Nginx",
     "author": "YmoT@tuta.com",
     "description": "NGINX is a free, open-source, high-performance HTTP server and reverse proxy, as well as an IMAP\/POP3 proxy server. NGINX is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption.",
@@ -13,25 +13,84 @@
         "ghcr.io\/ym0t\/nginx_php:8.3": "ghcr.io\/ym0t\/nginx_php:8.3",
         "ghcr.io\/ym0t\/nginx_php:8.2": "ghcr.io\/ym0t\/nginx_php:8.2",
         "ghcr.io\/ym0t\/nginx_php:8.1": "ghcr.io\/ym0t\/nginx_php:8.1",
-        "ghcr.io\/ym0t\/nginx_php:8.0": "ghcr.io\/ym0t\/nginx_php:8.0",
-        "ghcr.io\/ym0t\/nginx_php:7.3": "ghcr.io\/ym0t\/nginx_php:7.3"
+        "ghcr.io\/ym0t\/nginx_php:8.0": "ghcr.io\/ym0t\/nginx_php:8.0"
     },
     "file_denylist": [],
-    "startup": "{{STARTUP_COMMAND}}",
+    "startup": "if {{GIT_STATUS}}; then {{STARTUP_COMMAND_GIT}}; fi; echo \"{{PHP_VERSION}}\" > \"php_version.txt\"; {{STARTUP_COMMAND}};",
     "config": {
-        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"    listen {{server.build.default.port}};\",\r\n            \"    #access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    access_log\": \"    {{env.CONSOLE_ACCESS_LOG}}access_log \/home\/container\/naccess.log;\",\r\n            \"    #error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\",\r\n            \"    error_log\": \"    {{env.CONSOLE_ERROR_LOG}}error_log  \/home\/container\/nerror.log error;\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.MEMORY_LIMIT}};\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"[Docker] Services successfully launched\"\r\n}",
         "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
         "stop": "^C & ^C"
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget\r\ncd \/mnt\/server\r\n\r\necho -e \"[SETUP] Create folders\"\r\nmkdir logs && mkdir tmp && mkdir www\r\n\r\necho -e \"[SETUP] Copy Github files\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg.git .\/gtemp > \/dev\/null 2>&1\r\n\r\ncp -r .\/gtemp\/nginx .\r\ncp -r .\/gtemp\/php .\r\ncp .\/gtemp\/nginx.sh . && rm -R .\/gtemp\r\nchmod +x nginx.sh\r\n\r\necho \"${PHP_VERSION}\" > \"php_version.txt\"\r\n\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]\r\nthen\r\n    echo \"[SETUP] Install Wordpress\"\r\n    cd \/mnt\/server\/www\r\n    wget -q > \/dev\/null 2>&1 http:\/\/wordpress.org\/latest.tar.gz\r\n    tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n    mv wordpress\/* .\r\n    rm -rf wordpress latest.tar.gz\r\n    echo \"[SETUP] Wordpress installed - http:\/\/ip:port\/wp-admin \"\r\n    exit 0\r\nelse\r\n    echo \"<?php phpinfo(); ?>\" > \"www\/index.php\"\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed\"",
+            "script": "#!\/bin\/bash\r\n\r\n# [SETUP] Install necessary packages, including git\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget perl perl-doc fcgiwrap\r\n\r\n# Change to server directory\r\ncd \/mnt\/server\r\n\r\n# [SETUP] Create necessary folders\r\necho -e \"[SETUP] Create folders\"\r\nmkdir -p logs tmp www\r\n\r\n# Clone the default repository into a temporary directory\r\necho \"[Git] Cloning default repository 'https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg' into temporary directory.\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg \/mnt\/server\/gtemp > \/dev\/null 2>&1 && echo \"[Git] Repository cloned successfully.\" || { echo \"[Git] Error: Default repository clone failed.\"; exit 21; }\r\n\r\n# Copy the www folder and files from the temporary repository to the target directory\r\necho \"[Git] Copying folder and files from default repository.\"\r\ncp -r \/mnt\/server\/gtemp\/nginx \/mnt\/server || { echo \"[Git] Error: Copying 'nginx' folder failed.\"; exit 22; }\r\ncp -r \/mnt\/server\/gtemp\/php \/mnt\/server || { echo \"[Git] Error: Copying 'php' folder failed.\"; exit 22; }\r\ncp \/mnt\/server\/gtemp\/nginx.sh \/mnt\/server || { echo \"[Git] Error: Copying 'nginx.sh' file failed.\"; exit 22; }\r\nchmod +x \/mnt\/server\/nginx.sh\r\n\r\n# Remove the temporary cloned repository\r\nrm -rf \/mnt\/server\/gtemp\r\n\r\n# Check if GIT_STATUS is set to 1 (enabled) or 0 (disabled) as the first step\r\nif [ \"${GIT_STATUS}\" == \"1\" ] || [ \"${GIT_STATUS}\" == \"true\" ]; then\r\n    echo \"[Git] Git operations are enabled.\"\r\n\r\n    # Check if GIT_ADDRESS is set\r\n    if [ -z \"${GIT_ADDRESS}\" ]; then\r\n        echo \"[Git] Info: GIT_ADDRESS is not set.\"\r\n    else\r\n        # Add .git suffix to GIT_ADDRESS if it's not present\r\n        if [[ ${GIT_ADDRESS} != *.git ]]; then\r\n            GIT_ADDRESS=\"${GIT_ADDRESS}.git\"\r\n            echo \"[Git] Added .git suffix to GIT_ADDRESS: ${GIT_ADDRESS}\"\r\n        fi\r\n\r\n        # If username and access token are provided, use authenticated access\r\n        if [ -n \"${USERNAME}\" ] && [ -n \"${ACCESS_TOKEN}\" ]; then\r\n            echo \"[Git] Using authenticated Git access.\"\r\n            GIT_DOMAIN=$(echo \"${GIT_ADDRESS}\" | cut -d\/ -f3)\r\n            GIT_ADDRESS=\"https:\/\/${USERNAME}:${ACCESS_TOKEN}@${GIT_DOMAIN}$(echo ${GIT_ADDRESS} | cut -d\/ -f4-)\"\r\n            echo \"[Git] Updated GIT_ADDRESS for authenticated access: ${GIT_ADDRESS}\"\r\n        else\r\n            echo \"[Git] Using anonymous Git access.\"\r\n        fi\r\n\r\n        # Check if the 'www' directory exists, if not create it\r\n        if [ ! -d \/mnt\/server\/www ]; then\r\n            echo \"[Git] Creating \/mnt\/server\/www directory.\"\r\n            mkdir -p \/mnt\/server\/www\r\n          else\r\n            rm -R \/mnt\/server\/www && mkdir -p \/mnt\/server\/www\r\n        fi\r\n\r\n        cd \/mnt\/server\/www || { echo \"[Git] Error: Could not access \/mnt\/server\/www directory.\"; exit 1; }\r\n\r\n        if [ \"$(ls -A \/mnt\/server\/www)\" ]; then\r\n            echo \"[Git] \/mnt\/server\/www directory is not empty.\"\r\n            \r\n            # Check if .git directory exists in 'www'\r\n            if [ -d .git ]; then\r\n                echo \"[Git] .git directory exists in 'www'.\"\r\n\r\n                # Check if .git\/config exists in 'www'\r\n                if [ -f .git\/config ]; then\r\n                    echo \"[Git] Loading repository info from git config in 'www'.\"\r\n                    ORIGIN=$(git config --get remote.origin.url)\r\n                else\r\n                    echo \"[Git] Error: .git\/config not found in 'www'. The directory may contain files, but it's not a valid Git repository.\"\r\n                    exit 10\r\n                fi\r\n            else\r\n                echo \"[Git] Error: Directory contains files but no Git repository found in 'www'.\"\r\n                exit 11\r\n            fi\r\n\r\n            # Check if origin matches the provided GIT_ADDRESS\r\n            if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n                echo \"[Git] Repository origin matches. Pulling latest changes from ${GIT_ADDRESS} in 'www'.\"\r\n                git pull || { echo \"[Git] Error: git pull failed for 'www'.\"; exit 12; }\r\n            else\r\n                echo \"[Git] Error: Repository origin does not match the provided GIT_ADDRESS in 'www'.\"\r\n                exit 13\r\n            fi\r\n        else\r\n            # The directory is empty, clone the repository\r\n            echo \"[Git] \/mnt\/server\/www directory is empty. Cloning ${GIT_ADDRESS} into \/mnt\/server\/www.\"\r\n            git clone ${GIT_ADDRESS} . > \/dev\/null 2>&1 && echo \"[Git] Repository cloned successfully.\" || { echo \"[Git] Error: git clone failed for 'www'.\"; exit 14; }\r\n        fi\r\n    fi\r\nelse\r\n    echo \"[Git] Git operations are disabled. Skipping Git actions.\"\r\nfi\r\n\r\n\r\n# Check if WordPress should be installed\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]; then\r\n    echo \"[SETUP] Install WordPress\"\r\n    cd \/mnt\/server\/www\r\n    wget -q http:\/\/wordpress.org\/latest.tar.gz > \/dev\/null 2>&1 || { echo \"[SETUP] Error: Downloading WordPress failed.\"; exit 16; }\r\n    tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n    mv wordpress\/* .\r\n    rm -rf wordpress latest.tar.gz\r\n    echo \"[SETUP] WordPress installed - http:\/\/ip:port\/wp-admin\"\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed successfully\"\r\necho -e \"[STATUS] Start webserver\"\r\nbash \/mnt\/server\/nginx.sh",
             "container": "debian:bookworm-slim",
             "entrypoint": "bash"
         }
     },
     "variables": [
+        {
+            "name": "Git Status + Auto update",
+            "description": "Enable (git + pull latest files onstartup) or disable git. 1 = on and 0 = off",
+            "env_variable": "GIT_STATUS",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Startup Command Git",
+            "description": "The startup file for Git.",
+            "env_variable": "STARTUP_COMMAND_GIT",
+            "default_value": ".\/pull-git.sh",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Repo Address",
+            "description": "Git repo to clone\r\n\r\nI.E. https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Branch",
+            "description": "What branch to pull from github.\r\n\r\nDefault is blank to pull the repo default branch",
+            "env_variable": "BRANCH",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username to auth with git.",
+            "env_variable": "USERNAME",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Password to use with git.\r\n\r\nIt's best practice to use a Personal Access Token.\r\nhttps:\/\/github.com\/settings\/tokens\r\nhttps:\/\/gitlab.com\/-\/profile\/personal_access_tokens",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
         {
             "name": "Startup Command",
             "description": "The startup file for Nginx.",
@@ -44,7 +103,7 @@
         },
         {
             "name": "Wordpress",
-            "description": "Enable or disable Wordpress<br>\r\n\r\n0 = false (default)<br>\r\n1 = true",
+            "description": "Enable or disable Wordpress \r\n\r\n0 = false (default) \r\n1 = true",
             "env_variable": "WORDPRESS",
             "default_value": "0",
             "user_viewable": true,
@@ -54,7 +113,7 @@
         },
         {
             "name": "PHP Version",
-            "description": "Select the correct PHP version! See the tag behind the Docker image. <br>\r\nExample:<br>\r\nSelected image: ghcr.io\/ym0t\/nginx_php:8.2<br>\r\nEnter in the field: 8.2<br><br>\r\nSelected image: ghcr.io\/ym0t\/nginx_php:8.1<br>\r\nEnter in the field: 8.1<br>",
+            "description": "Select the correct PHP version! See the tag behind the Docker image.  \r\nExample: \r\nSelected image: ghcr.io\/ym0t\/nginx_php:8.3\r\nEnter in the field: 8.2  \r\nSelected image: ghcr.io\/ym0t\/nginx_php:8.1 \r\nEnter in the field: 8.1",
             "env_variable": "PHP_VERSION",
             "default_value": "",
             "user_viewable": true,
@@ -65,31 +124,11 @@
         {
             "name": "Memory_limit",
             "description": "Change the memory_limit value from the php.ini file",
-            "env_variable": "MEMORY_LIMIT",
+            "env_variable": "memory_limit",
             "default_value": "128M",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string|max:20",
-            "field_type": "text"
-        },
-        {
-            "name": "Access Log (console)",
-            "description": "Deactivate or activate the access log in the console. If this option is activated, the nginx access logs are displayed in the console.<br>\r\n<Empty> = deactivated (default)<br>\r\n# = activated",
-            "env_variable": "CONSOLE_ACCESS_LOG",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string|regex:\/^#$\/",
-            "field_type": "text"
-        },
-        {
-            "name": "Error Log (console)",
-            "description": "Deactivate or activate the error log in the console. If this option is activated, the nginx error logs are displayed in the console.<br>\r\n<Empty> = deactivated (default)<br>\r\n# = activated",
-            "env_variable": "CONSOLE_ERROR_LOG",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string|regex:\/^#$\/",
             "field_type": "text"
         }
     ]
