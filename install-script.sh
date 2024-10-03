@@ -40,8 +40,14 @@ else
     # If username and access token are provided, use authenticated access
     if [ -n "${USERNAME}" ] && [ -n "${ACCESS_TOKEN}" ]; then
         echo "[Git] Using authenticated Git access."
+        
+        # Extract the domain and the rest of the URL, ensuring the correct format
         GIT_DOMAIN=$(echo "${GIT_ADDRESS}" | cut -d/ -f3)
-        GIT_ADDRESS="https://${USERNAME}:${ACCESS_TOKEN}@${GIT_DOMAIN}$(echo ${GIT_ADDRESS} | cut -d/ -f4-)"
+        GIT_REPO=$(echo "${GIT_ADDRESS}" | cut -d/ -f4-) # Rest of the URL after the domain
+        
+        # Construct the authenticated Git URL
+        GIT_ADDRESS="https://${USERNAME}:${ACCESS_TOKEN}@${GIT_DOMAIN}/${GIT_REPO}"
+        
         echo "[Git] Updated GIT_ADDRESS for authenticated access: ${GIT_ADDRESS}"
     else
         echo "[Git] Using anonymous Git access."
