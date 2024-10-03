@@ -18,7 +18,7 @@ Nginx web server egg with PHP, optional Wordpress installation and git support.
 
 - **Step 1:** Download the egg (json file `egg-nginx.json`)
 - **Step 2:** In your panel, go to the "Nests" category in the sidebar
-- **Step 3:** Import the egg under "Import egg" and then press "save" at the bottom right
+- **Step 3:** Import the egg under "Import egg"
 - **Step 4:** Create a new server and select the "Nginx" egg
 - **Step 5:** Select the corresponding Docker image with the desired PHP version
 - **Step 6:** Fill in the text fields. Whether Wordpress is desired or not. It is important to **enter the selected PHP version in the PHP version field**.
