@@ -107,7 +107,7 @@ if [ "${WORDPRESS}" == "true" ] || [ "${WORDPRESS}" == "1" ]; then
         mv wordpress/* .
         rm -rf wordpress latest.tar.gz
         echo "[SETUP] WordPress installed - http://ip:port/wp-admin"
-    elif [ "${GIT_STATUS}" == "0" ] || [ "${GIT_STATUS}" == "false" ]; then
+    elif [ -z "${GIT_ADDRESS}" ]; then
         # Create a simple PHP info page if WordPress is not installed
         echo "<?php phpinfo(); ?>" > "www/index.php"
 fi
