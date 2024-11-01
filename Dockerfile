@@ -19,6 +19,7 @@ RUN apt-get update \
         php${PHP_VERSION}-common \
         php${PHP_VERSION}-mysqlnd \
         php${PHP_VERSION}-PDO \
+        php${PHP_VERSION}-sybase \
         php${PHP_VERSION}-psr \
         php${PHP_VERSION}-xml \
         php${PHP_VERSION}-bcmath \
