@@ -7,6 +7,7 @@ Nginx web server egg with PHP, optional Wordpress installation and git support.
 #### Supports AMD64 & ARM64
 #### Git support for your webserver
 #### You can select the desired PHP version:
+- ✅ 8.4
 - ✅ 8.3
 - ✅ 8.2
 - ✅ 8.1 [Only critical security updates]
