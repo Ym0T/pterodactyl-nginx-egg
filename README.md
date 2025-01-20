@@ -90,13 +90,13 @@ Changing the PHP version is currently still somewhat cumbersome. A revised versi
 
 - **Step 1:** In your Pterodactyl panel, go to the "Startup" tab on your web server. Change the variable "PHP VERSION" to the desired version.
 
-![php_version](https://github.com/Ym0T/pterodactyl-nginx-egg/assets/104158130/cf76cf05-a3df-464a-8f86-77a69101bfc4)
+![php_version](https://github.com/user-attachments/assets/b07d66d2-ab20-4604-8358-50842d172dda)
 
 ---
 
 - **Step 2:** Finally, you need to customise the Docker image. Select the appropriate Docker image to match the version.
 
-![docker_image](https://github.com/Ym0T/pterodactyl-nginx-egg/assets/104158130/cf76cf05-a3df-464a-8f86-77a69101bfc4)
+![docker_image](https://github.com/user-attachments/assets/050b6db9-9cc8-42f7-a300-11450e60cb7d)
 
 ---
 
