@@ -2,13 +2,27 @@ FROM debian:bookworm-slim
 
 LABEL author="Ym0t" maintainer="YmoT@tuta.com"
 
-ARG PHP_VERSION="8.3"
+ARG PHP_VERSION
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y git apt-transport-https lsb-release ca-certificates wget nginx \
+RUN apt-get update && apt-get install -y \
+        git \
+        apt-transport-https \
+        lsb-release \
+        ca-certificates \
+        wget \
+        nginx \
+    && ARCH=$(uname -m) \
+    && if [ "$ARCH" = "x86_64" ]; then \
+        wget -O /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        wget -O /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi \
+    && dpkg -i /tmp/cloudflared.deb \
+    && rm /tmp/cloudflared.deb \
     && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
     && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list \
     && apt-get update \
@@ -18,7 +32,7 @@ RUN apt-get update \
         php${PHP_VERSION}-cli \
         php${PHP_VERSION}-common \
         php${PHP_VERSION}-mysqlnd \
-        php${PHP_VERSION}-PDO \
+        php${PHP_VERSION}-pdo \
         php${PHP_VERSION}-sybase \
         php${PHP_VERSION}-psr \
         php${PHP_VERSION}-xml \
@@ -47,13 +61,13 @@ RUN apt-get update \
         php${PHP_VERSION}-odbc \
         php${PHP_VERSION}-pcov \
         php${PHP_VERSION}-pgsql \
-        php${PHP_VERSION}-Phar \
+        php${PHP_VERSION}-phar \
         php${PHP_VERSION}-posix \
         php${PHP_VERSION}-ps \
         php${PHP_VERSION}-pspell \
         php${PHP_VERSION}-readline \
         php${PHP_VERSION}-shmop \
-        php${PHP_VERSION}-SimpleXML \
+        php${PHP_VERSION}-simplexml \
         php${PHP_VERSION}-soap \
         php${PHP_VERSION}-sockets \
         php${PHP_VERSION}-sqlite3 \
@@ -70,18 +84,20 @@ RUN apt-get update \
         php${PHP_VERSION}-inotify \
         php${PHP_VERSION}-maxminddb \
         php${PHP_VERSION}-protobuf \
-        php${PHP_VERSION}-OPcache \
-    && apt-get purge -y --auto-remove \
+        php${PHP_VERSION}-opcache \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -m -d /home/container/ -s /bin/bash container
-ENV USER=container HOME=/home/container
+# Create user and set environment variables
+RUN useradd -m -d /home/container/ -s /bin/bash container \
+    && echo "USER=container" >> /etc/environment \
+    && echo "HOME=/home/container" >> /etc/environment
 
 WORKDIR /home/container
 
 STOPSIGNAL SIGINT
 
+# Copy entrypoint script
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-CMD /entrypoint.sh
+CMD ["/entrypoint.sh"]

@@ -13,3 +13,5 @@ if command -v git > /dev/null 2>&1; then
 else
     echo "[Git] Git is not installed, skipping Git pull"
 fi
+
+echo -e " "

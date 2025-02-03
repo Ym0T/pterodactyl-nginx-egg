@@ -12,6 +12,14 @@ php-fpm$PHP_VERSION -c /home/container/php/php.ini --fpm-config /home/container/
 
 # [Docker] Starting NGINX
 echo "[Docker] Starting NGINX"
-echo "[Docker] Services successfully launched"
+echo -e "[Docker]\033[0;32m Services successfully launched \033[0m"
+
+# Copyright and License Information
+echo -e " "
+echo -e "\033[0;34mCopyright (c) 2023-2025 by Ym0T\033[0m"
+echo -e "\033[0;34mScript created by: https://github.com/Ym0T\033[0m"
+echo -e "\033[0;34mLicensed under the MIT License.\033[0m"
+echo -e "\033[0;34mSee the LICENSE file for details.\033[0m"
+echo -e " "
 
 nginx -c /home/container/nginx/nginx.conf -p /home/container

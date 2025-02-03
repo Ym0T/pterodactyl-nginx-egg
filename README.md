@@ -1,10 +1,11 @@
 # Pterodactyl Nginx egg
 
 Nginx web server egg with PHP, optional Wordpress installation and git support.
-
+<br><br>
 ## Features
 
 #### Supports AMD64 & ARM64
+#### Cloudflared Tunnel support
 #### Git support for your webserver
 #### You can select the desired PHP version:
 - ✅ 8.4
@@ -14,7 +15,7 @@ Nginx web server egg with PHP, optional Wordpress installation and git support.
 - ☑️ 8.0 [EOL]
 
 [PHP supported versions](https://www.php.net/supported-versions.php)
-
+<br><br>
 ## How to install
 
 - **Step 1:** Download the egg (json file `egg-nginx.json`)
@@ -23,12 +24,58 @@ Nginx web server egg with PHP, optional Wordpress installation and git support.
 - **Step 4:** Create a new server and select the "Nginx" egg
 - **Step 5:** Select the corresponding Docker image with the desired PHP version
 - **Step 6:** Fill in the text fields. Whether Wordpress is desired or not. It is important to **enter the selected PHP version in the PHP version field**.
+<br><br>
+## 🚀 Cloudflared Tunnel Tutorial  
 
+With **Cloudflared**, you can create a secure tunnel to your server, making it accessible over the internet **without** complicated port forwarding!  
+[Cloudflared | Create a remotely-managed tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel/)
+
+### 📌 Requirements  
+- A [Cloudflare](https://dash.cloudflare.com/) account  
+- A domain (optional but recommended)  
+
+---
+
+- 🔹 **Step 1: Log in to Zero Trust ↗ and go to Networks > Tunnel**  
+- 🔹 **Step 2: Select Create a tunnel.**  
+- 🔹 **Step 3: Choose Cloudflared for the connector type and select Next.**  
+- 🔹 **Step 4: Enter a name for your tunnel.**  
+- 🔹 **Step 5: Select Save tunnel.**  
+- 🔹 **Step 6: Save the token. (The token is very long)**
+  
+![grafik](https://github.com/user-attachments/assets/0c0430a5-5cb6-45e4-8b26-1805cddde3cc)
+
+
+---
+
+- 🔹 **Step 7: Activate Cloudflared**
+    
+![grafik](https://github.com/user-attachments/assets/726c5dad-7cb6-4537-a215-6aaec59d827a)
+
+
+---
+
+- 🔹 **Step 8: Add your token.**
+  
+![grafik](https://github.com/user-attachments/assets/46b09f6a-30b0-48aa-9980-53697b1fbcf6)
+
+
+---
+
+- 🔹 **Step 9: Restart your webserver.**
+  
+![grafik](https://github.com/user-attachments/assets/84fb9b6c-10cd-4bd3-86ae-e725e7145e8d)
+
+---
+
+✅ You have successfully set up Cloudflared and connected it to your server!
+<br><br>
 ## FAQ
+
 
 #### In which folder do I upload my files for my site?
 The "www" folder is used as a public folder. There you can add your PHP, HTML, CSS, JS and so on files that are required for the public or for the operation of the site.
-
+<br><br>
 ## How do I use Git support?
 
 #### Instructions for Git support
@@ -83,7 +130,7 @@ Furthermore, if not already done, adjust to your domain:
 ```bash
 server_name www.example.com;
 ```
-
+<br><br>
 ## Change PHP version
 
 Changing the PHP version is currently still somewhat cumbersome. A revised version will be available in the future.
@@ -101,7 +148,7 @@ Changing the PHP version is currently still somewhat cumbersome. A revised versi
 ---
 
 - **Step 3:** Restart your container.
-
+<br><br>
 ## PHP extensions
 
 PHP extensions of PHP version 8.3:
@@ -111,7 +158,7 @@ Core, date, libxml, openssl, pcre, zlib, filter, hash, json, random, Reflection,
 ```
 
 Small differences in the extensions between the PHP versions.
-
+<br><br>
 ## License
 
 [MIT License](https://choosealicense.com/licenses/mit/)

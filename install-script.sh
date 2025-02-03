@@ -21,7 +21,9 @@ cp -r /mnt/server/gtemp/nginx /mnt/server || { echo "[Git] Error: Copying 'nginx
 cp -r /mnt/server/gtemp/php /mnt/server || { echo "[Git] Error: Copying 'php' folder failed."; exit 22; }
 cp /mnt/server/gtemp/nginx.sh /mnt/server || { echo "[Git] Error: Copying 'nginx.sh' file failed."; exit 22; }
 cp /mnt/server/gtemp/pull-git.sh /mnt/server || { echo "[Git] Error: Copying 'pull-git.sh' file failed."; exit 22; }
-chmod +x /mnt/server/nginx.sh && chmod +x /mnt/server/pull-git.sh
+cp /mnt/server/gtemp/cloudflared.sh /mnt/server || { echo "[Git] Error: Copying 'cloudflared.sh' file failed."; exit 22; }
+cp /mnt/server/gtemp/LICENSE /mnt/server || { echo "[Git] Error: Copying 'LICENSE' file failed."; exit 22; }
+chmod +x /mnt/server/nginx.sh /mnt/server/pull-git.sh /mnt/server/cloudflared.sh
 
 # Remove the temporary cloned repository
 rm -rf /mnt/server/gtemp
