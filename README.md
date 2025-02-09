@@ -1,16 +1,16 @@
 # Pterodactyl Nginx egg
 
-Nginx web server egg with PHP, optional Wordpress installation and git support.
+Pterodactyl Nginx web server egg with PHP8.x, Wordpress, Git & Cloudflare Tunnel support 
 <br><br>
 ## Features
 
-#### Supports AMD64 & ARM64
-#### Cloudflared Tunnel support
-#### Git support for your webserver
-#### You can select the desired PHP version:
+#### 🔹 Supports AMD64 & ARM64
+#### 🔹 Cloudflare Tunnel support
+#### 🔹 Git support for your webserver
+#### 🔹 You can select the desired PHP version:
 - ✅ 8.4
 - ✅ 8.3
-- ✅ 8.2
+- ✅ 8.2 [Only critical security updates]
 - ✅ 8.1 [Only critical security updates]
 - ☑️ 8.0 [EOL]
 
@@ -32,7 +32,6 @@ With **Cloudflared**, you can create a secure tunnel to your server, making it a
 
 ### 📌 Requirements  
 - A [Cloudflare](https://dash.cloudflare.com/) account  
-- A domain (optional but recommended)  
 
 ---
 
@@ -59,16 +58,27 @@ With **Cloudflared**, you can create a secure tunnel to your server, making it a
   
 ![grafik](https://github.com/user-attachments/assets/46b09f6a-30b0-48aa-9980-53697b1fbcf6)
 
-
 ---
 
-- 🔹 **Step 9: Restart your webserver.**
+- 🔹 **Step 9: Add public hostname**
   
-![grafik](https://github.com/user-attachments/assets/84fb9b6c-10cd-4bd3-86ae-e725e7145e8d)
+![grafik](https://github.com/user-attachments/assets/2107c323-1ed1-406b-8fcf-12ceac963aea)
 
 ---
 
-✅ You have successfully set up Cloudflared and connected it to your server!
+- 🔹 **Step 10: Depending on the type, select http and URL always “localhost” + the web server port**
+
+![grafik](https://github.com/user-attachments/assets/7b1a4e91-50f3-4fcb-a0da-7eed611ae391)
+
+---
+
+- 🔹 **Step 11: Restart your webserver.**
+  
+![grafik](https://github.com/user-attachments/assets/3d4b63fd-db66-4a7d-85ea-0bec4a7ef948)
+
+
+✅ You have successfully set up Cloudflared and connected it to your server!<br><br>
+🔹 Info: Your web server ip and port does not have to be accessible from outside and can have a local IP such as 127.0.0.1.
 <br><br>
 ## FAQ
 
