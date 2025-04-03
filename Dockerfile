@@ -85,9 +85,12 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-maxminddb \
         php${PHP_VERSION}-protobuf \
         php${PHP_VERSION}-opcache \
-    && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
-    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
-    && php -r "unlink('composer-setup.php');" \
+        php${PHP_VERSION}-dev \
+    && wget -q -O /tmp/composer.phar https://getcomposer.org/download/latest-stable/composer.phar \
+    && SHA256=$(wget -q -O - https://getcomposer.org/download/latest-stable/composer.phar.sha256) \
+    && echo "$SHA256 /tmp/composer.phar" | sha256sum -c - \
+    && mv /tmp/composer.phar /usr/local/bin/composer \
+    && chmod +x /usr/local/bin/composer \
     && rm -rf /var/lib/apt/lists/*
 
 # Create user and set environment variables
