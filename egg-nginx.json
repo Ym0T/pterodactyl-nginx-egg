@@ -4,10 +4,10 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2025-02-03T10:01:15+01:00",
+    "exported_at": "2025-04-03T22:34:54+02:00",
     "name": "Pterodactyl Nginx Egg",
     "author": "YmoT@tuta.com",
-    "description": "Pterodactyl Nginx Egg\r\n\r\nThe Pterodactyl Nginx Egg is a web server solution for Pterodactyl, featuring Nginx, PHP, Git support, Cloudflare Tunnel integration, and optional WordPress installation. It supports AMD64 & ARM64 architectures and allows users to choose their preferred PHP version (8.0 \u2013 8.4).\r\nKey Features:\r\n\r\n\u2705 Supports multiple PHP versions\r\n\u2705 Git integration for automatic deployment\r\n\u2705 Cloudflare Tunnel support for secure remote access\r\n\u2705 Optional WordPress setup\r\n\u2705 HTTPS configuration support\r\n\u2705 Automatic updates for Git repositories",
+    "description": "Pterodactyl Nginx Egg\r\n\r\nThe Pterodactyl Nginx Egg is a web server solution for Pterodactyl, featuring Nginx, PHP, Git support, Cloudflare Tunnel integration, composer and optional WordPress installation. It supports AMD64 & ARM64 architectures and allows users to choose their preferred PHP version (8.0 \u2013 8.4).\r\nKey Features:\r\n\r\n\u2705 Supports multiple PHP versions\r\n\u2705 Git integration for automatic deployment\r\n\u2705 Cloudflare Tunnel support for secure remote access\r\n\u2705 Optional WordPress setup\r\n\u2705 HTTPS configuration support\r\n\u2705 Automatic updates for Git repositories",
     "features": null,
     "docker_images": {
         "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.4-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.4-latest",
@@ -17,7 +17,7 @@
         "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.0-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.0-latest"
     },
     "file_denylist": [],
-    "startup": "echo \"{{PHP_VERSION}}\" > \"php_version.txt\";\r\n\r\nif [ \"{{GIT_UPDATE}}\" = \"1\" ]; then \r\n    {{STARTUP_COMMAND_GIT}}; \r\nfi;\r\n\r\nif [ \"{{CLOUDFLARED_STATUS}}\" = \"1\" ]; then \r\n    echo \"{{CLOUDFLARED_TOKEN}}\" > \"cloudflared_token.txt\";\r\n    {{STARTUP_COMMAND_CLOUDFLARED}};\r\nfi;\r\n\r\n{{STARTUP_COMMAND}};",
+    "startup": "echo \"{{PHP_VERSION}}\" > \"php_version.txt\";\r\n\r\nif [ \"{{GIT_UPDATE}}\" = \"1\" ]; then \r\n    {{STARTUP_COMMAND_GIT}}; \r\nfi;\r\n\r\nif [ \"{{CLOUDFLARED_STATUS}}\" = \"1\" ]; then \r\n    echo \"{{CLOUDFLARED_TOKEN}}\" > \"cloudflared_token.txt\";\r\n    {{STARTUP_COMMAND_CLOUDFLARED}};\r\nfi;\r\n\r\nif [[ -n \"{{COMPOSER_MODULES}}\" ]]; then\r\n  composer require {{COMPOSER_MODULES}} --working-dir=\/home\/container\/www --no-interaction --ansi;\r\nfi;\r\n\r\n{{STARTUP_COMMAND}};",
     "config": {
         "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"Services successfully launched\"\r\n}",
@@ -33,13 +33,13 @@
     },
     "variables": [
         {
-            "name": "PHP Version",
-            "description": "Select the correct PHP version! See the tag behind the Docker image.  \r\nExample: Selected image (ghcr.io\/ym0t\/nginx_php:8.4)\r\nEnter in the field: 8.4",
-            "env_variable": "PHP_VERSION",
-            "default_value": "",
+            "name": "Startup Command",
+            "description": "The startup file for Nginx.",
+            "env_variable": "STARTUP_COMMAND",
+            "default_value": ".\/nginx.sh",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|string|max:3",
+            "rules": "required|string",
             "field_type": "text"
         },
         {
@@ -53,23 +53,23 @@
             "field_type": "text"
         },
         {
+            "name": "PHP Version",
+            "description": "Select the correct PHP version! See the tag behind the Docker image.  \r\nExample: Selected image (ghcr.io\/ym0t\/nginx_php:8.4)\r\nEnter in the field: 8.4",
+            "env_variable": "PHP_VERSION",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:3",
+            "field_type": "text"
+        },
+        {
             "name": "Memory_limit",
             "description": "Change the memory_limit value from the php.ini file",
-            "env_variable": "memory_limit",
+            "env_variable": "MEMORY_LIMIT",
             "default_value": "128M",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string|max:20",
-            "field_type": "text"
-        },
-        {
-            "name": "Startup Command",
-            "description": "The startup file for Nginx.",
-            "env_variable": "STARTUP_COMMAND",
-            "default_value": ".\/nginx.sh",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|string",
             "field_type": "text"
         },
         {
@@ -160,6 +160,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Composer modules",
+            "description": "Enter a space-separated list of Composer packages with their version constraints to be installed. For example: vendor\/package1:^2.0 vendor\/package2:~1.5",
+            "env_variable": "COMPOSER_MODULES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
             "field_type": "text"
         }
     ]

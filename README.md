@@ -80,6 +80,49 @@ With **Cloudflared**, you can create a secure tunnel to your server, making it a
 ✅ You have successfully set up Cloudflared and connected it to your server!<br><br>
 🔹 Info: Your web server ip and port does not have to be accessible from outside and can have a local IP such as 127.0.0.1.
 <br><br>
+## How to Use Composer Modules
+
+This Pterodactyl Egg allows you to easily install additional PHP libraries (Composer modules) for your server. Here's how:
+
+1.  **Locate the `Composer modules` Variable:** When creating or editing your server in the Pterodactyl panel, you will find a variable named `Composer modules`.
+
+2.  **Specify the Modules:** In the value field of the `Composer modules` variable, enter a space-separated list of the Composer packages you wish to install. You can also specify the desired version constraints.
+
+    * **Basic Package:** To install the latest stable version of a package, simply enter its name:
+        ```
+        vendor/package
+        ```
+        Example: `symfony/http-foundation`
+
+    * **Specific Version:** To install a specific version or version range, use the following format:
+        ```
+        vendor/package:version_constraint
+        ```
+        Examples:
+        * `monolog/monolog:^2.0` (installs the latest version within the 2.x branch)
+        * `doctrine/orm:~2.10` (installs a version compatible with 2.10)
+        * `nesbot/carbon:^2.50`
+
+    * **Multiple Modules:** To install multiple modules, separate them with spaces:
+        ```
+        vendor/package1:version vendor/package2 vendor/package3:^1.0
+        ```
+        Example: `symfony/http-foundation ^6.0 monolog/monolog guzzlehttp/guzzle`
+
+3.  **Save and Start/Restart Your Server:** After entering the desired Composer modules in the `COMPOSER_MODULES` variable, save your server configuration. If your server is already running, you will need to restart it for the changes to take effect.
+
+4.  **Module Installation:** During the server startup process, the Egg will automatically detect the modules listed in the `COMPOSER_MODULES` variable and attempt to install them using Composer. You can monitor the server console for the installation output.
+
+**Important Notes:**
+
+* Ensure that the package names and version constraints you enter are correct and exist on Packagist ([https://packagist.org/](https://packagist.org/)).
+* Incorrectly specified modules or version constraints may lead to installation errors. Check your server console for any error messages.
+* Installing a large number of modules or very complex dependencies can increase the server startup time.
+* This Egg assumes that Composer is already installed within the server environment.
+
+By following these steps, you can easily extend the functionality of your server by adding various PHP libraries through Composer modules.
+
+<br><br>
 ## FAQ
 
 
