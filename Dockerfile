@@ -85,6 +85,9 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-maxminddb \
         php${PHP_VERSION}-protobuf \
         php${PHP_VERSION}-opcache \
+    && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+    && php -r "unlink('composer-setup.php');" \
     && rm -rf /var/lib/apt/lists/*
 
 # Create user and set environment variables
