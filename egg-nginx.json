@@ -19,7 +19,7 @@
     "file_denylist": [],
     "startup": "echo \"{{PHP_VERSION}}\" > \"php_version.txt\";\r\n\r\nif [ \"{{GIT_UPDATE}}\" = \"1\" ]; then \r\n    {{STARTUP_COMMAND_GIT}}; \r\nfi;\r\n\r\nif [ \"{{CLOUDFLARED_STATUS}}\" = \"1\" ]; then \r\n    echo \"{{CLOUDFLARED_TOKEN}}\" > \"cloudflared_token.txt\";\r\n    {{STARTUP_COMMAND_CLOUDFLARED}};\r\nfi;\r\n\r\nif [[ -n \"{{COMPOSER_MODULES}}\" ]]; then\r\n  composer require {{COMPOSER_MODULES}} --working-dir=\/home\/container\/www --no-interaction --ansi;\r\nfi;\r\n\r\n{{STARTUP_COMMAND}};",
     "config": {
-        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.memory_limit}};\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.MEMORY_LIMIT}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"Services successfully launched\"\r\n}",
         "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
         "stop": "^C & ^C"
