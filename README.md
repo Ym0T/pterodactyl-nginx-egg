@@ -1,9 +1,10 @@
 # Pterodactyl Nginx egg
 
-Pterodactyl Nginx web server egg with PHP8.x, Wordpress, Git & Cloudflare Tunnel support 
+Pterodactyl Nginx web server egg with PHP8.x, Wordpress, Git, Composer & Cloudflare Tunnel support 
 <br><br>
 ## Features
 
+#### 🔹 PHP Composer support
 #### 🔹 Supports AMD64 & ARM64
 #### 🔹 Cloudflare Tunnel support
 #### 🔹 Git support for your webserver
