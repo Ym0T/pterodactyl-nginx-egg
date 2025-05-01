@@ -4,7 +4,7 @@ This module conditionally updates a Git repository at container startup.
 
 ## Features
 
-- Conditional execution based on `GIT_STATUS` (true/false)
+- Conditional execution based on `GIT_STATUS` (1/0)
 - Verifies that Git is installed; skips update if not
 - Checks if the target directory is a Git repository; skips if not
 - Pulls the latest changes and reports success or failure
@@ -15,7 +15,7 @@ This module conditionally updates a Git repository at container startup.
 
 | Env Variable | Default                | Description                                    |
 |--------------|------------------------|------------------------------------------------|
-| `GIT_STATUS` | `true`                 | Whether to run the Git update script           |
+| `GIT_STATUS` | `0`                    | Whether to run the Git update script           |
 | `GIT_DIR`    | `/home/container/www`  | Path to the Git repository directory           |
 
 ## Example Egg JSON Variables
@@ -25,7 +25,7 @@ This module conditionally updates a Git repository at container startup.
   {
     "name": "Enable Git Update",
     "env_variable": "GIT_STATUS",
-    "default_value": "true",
+    "default_value": "0",
     "description": "Run Git update script on startup",
     "required": false
   },

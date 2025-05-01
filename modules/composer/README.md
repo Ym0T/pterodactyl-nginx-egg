@@ -14,7 +14,7 @@ This module installs additional Composer packages at container startup based on 
 
 | Env Variable         | Default    | Description                                                                |
 |----------------------|------------|----------------------------------------------------------------------------|
-| `COMPOSER_STATUS`    | `true`     | Enable (`true`) or disable (`false`) the Composer module                  |
+| `COMPOSER_STATUS`    | `1`        | Enable (`1`) or disable (`0`) the Composer module                  |
 | `COMPOSER_MODULES`   | (empty)    | Space-separated list of packages, e.g. `vendor/pkg1:^2.0 vendor/pkg2:~1.5` |
 
 ## Script Details
