@@ -1,47 +1,107 @@
-# Cloudflared Tunnel Module
+# LogCleaner Module
 
-This module manages a Cloudflare Tunnel at container startup, with configurable settings and robust execution.
+This module runs at container startup to clean up temporary and log files based on configurable thresholds.
 
 ## Features
 
-- Conditional execution based on `CF_STATUS` (true/false)
-- Reads token from `CF_TOKEN_FILE`; skips if missing or empty
-- Starts Cloudflared in background, saves PID to `CF_PID_FILE`
-- Monitors log (`CF_LOG_FILE`) for success or failure patterns
-- Status updates at configurable intervals (`CF_STATUS_TIMES`)
-- Failure handling with detailed log output
-- Colorized, structured output
-- Configurable via environment variables
+- Conditional execution based on `LOGCLEANER_STATUS` (1 to enable)
+- Removes all files in the temporary directory (`/home/container/tmp`)
+- Deletes log files in `/home/container/logs` that are:
+  - larger than `MAX_SIZE_MB` (default: 10 MB)
+  - older than `MAX_AGE_DAYS` (default: 30 days)
+- Supports dry-run via `DRY_RUN` (lists files without deleting)
+- Colorized, structured output for easy reading
+- Robust error handling with `set -euo pipefail` and trap on error
 
 ## Configuration
 
-Environment variables:
+| Environment Variable   | Default                  | Description                                         |
+|------------------------|--------------------------|-----------------------------------------------------|
+| `LOGCLEANER_STATUS`    | `1`                      | Enable (`true`/`1`) or disable (`false`/`0`) module |
+| `LOG_DIR`              | `/home/container/logs`   | Directory where log files are stored                |
+| `TMP_DIR`              | `/home/container/tmp`    | Directory for temporary files                       |
+| `MAX_SIZE_MB`          | `10`                     | Remove log files larger than this (in MB)           |
+| `MAX_AGE_DAYS`         | `30`                     | Remove log files older than this (in days)          |
+| `DRY_RUN`              | `false`                  | When `true`, only shows what would be deleted       |
 
-- `LOGCLEANER_STATUS` (default: `true`) – enable (`true`) or disable (`false`) the logcleaner module
-- `LOG_DIR` (default: `/home/container/logs`)
-- `TMP_DIR` (default: `/home/container/tmp`)
-- `MAX_SIZE_MB` (default: `10`)
-- `MAX_AGE_DAYS` (default: `30`)
-- `DRY_RUN` (default: `false`)
+## Usage
 
-## Example Egg JSON Variables
+1. **Place and make executable** the script:
+   ```bash
+   chmod +x modules/logcleaner/start.sh
+   ```
+2. **Define environment variables** in your Egg JSON under `variables`:
+   ```json
+   [
+     {
+       "name": "Enable LogCleaner",
+       "env_variable": "LOGCLEANER_STATUS",
+       "default_value": "1",
+       "description": "Enable or disable the LogCleaner module",
+       "user_viewable": true,
+       "user_editable": true,
+       "rules": "required|boolean",
+       "field_type": "boolean"
+     },
+     {
+       "name": "Log Directory",
+       "env_variable": "LOG_DIR",
+       "default_value": "/home/container/logs",
+       "description": "Path where log files are stored",
+       "user_viewable": true,
+       "user_editable": true,
+       "rules": "required|string",
+       "field_type": "text"
+     },
+     {
+       "name": "Temp Directory",
+       "env_variable": "TMP_DIR",
+       "default_value": "/home/container/tmp",
+       "description": "Path for temporary files",
+       "user_viewable": true,
+       "user_editable": true,
+       "rules": "required|string",
+       "field_type": "text"
+     },
+     {
+       "name": "Max Log File Size (MB)",
+       "env_variable": "MAX_SIZE_MB",
+       "default_value": "10",
+       "description": "Maximum log file size before deletion",
+       "user_viewable": true,
+       "user_editable": true,
+       "rules": "required|integer",
+       "field_type": "text"
+     },
+     {
+       "name": "Max Log Age (days)",
+       "env_variable": "MAX_AGE_DAYS",
+       "default_value": "30",
+       "description": "Maximum log file age before deletion",
+       "user_viewable": true,
+       "user_editable": true,
+       "rules": "required|integer",
+       "field_type": "text"
+     },
+     {
+       "name": "Dry Run",
+       "env_variable": "DRY_RUN",
+       "default_value": "false",
+       "description": "Show what would be deleted without removing files",
+       "user_viewable": true,
+       "user_editable": true,
+       "rules": "required|boolean",
+       "field_type": "boolean"
+     }
+   ]
+   ```
 
-```json
-"variables": [
-  { "name": "Enable Cloudflared Tunnel", "env_variable": "CF_STATUS", "default_value": "true", "description": "Run Cloudflared Tunnel on startup", "required": false },
-  { "name": "Cloudflared Token File", "env_variable": "CF_TOKEN_FILE", "default_value": "/home/container/cloudflared_token.txt", "description": "Path to Cloudflare Tunnel token file", "required": false },
-  { "name": "Cloudflared Log File", "env_variable": "CF_LOG_FILE", "default_value": "/home/container/logs/cloudflared.log", "description": "Path to store Cloudflared logs", "required": false },
-  { "name": "Cloudflared PID File", "env_variable": "CF_PID_FILE", "default_value": "/home/container/tmp/cloudflared.pid", "description": "Path to save Cloudflared PID", "required": false }
-]
-```
+## Script Details
 
-## Script Logic
+- Uses `shopt -s nullglob` to handle empty directories gracefully.
+- Gathers files via `find` and `mapfile`, then loops through arrays to delete.
+- `delete_file` helper respects `DRY_RUN` mode.
+- Each major section prints a header for clarity.
+- Errors trap with line number for quick debugging.
 
-1. Exit immediately if `CF_STATUS` is not `true`.
-2. Validate presence and readability of `CF_TOKEN_FILE`.
-3. Launch Cloudflared Tunnel in background; log to `CF_LOG_FILE`.
-4. Record PID in `CF_PID_FILE`.
-5. Loop up to `CF_MAX_ATTEMPTS` seconds, printing status at intervals in `CF_STATUS_TIMES`.
-6. On failure to start or missing success message, print last logs and exit 1.
-7. On success, print confirmation and exit 0.
-
+---
