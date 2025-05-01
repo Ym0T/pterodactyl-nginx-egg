@@ -10,29 +10,38 @@ NC='\033[0m'
 
 # Header function
 header() {
-  echo -e "${BOLD_BLUE}$1${NC}"
   echo -e "${BLUE}───────────────────────────────────────────────${NC}"
+  echo -e "${BOLD_BLUE}[Composer] $1${NC}"
 }
 
 # Configuration via environment variables
 COMPOSER_STATUS="${COMPOSER_STATUS:-false}"
 COMPOSER_MODULES="${COMPOSER_MODULES:-}"
+CACHE_DIR="${COMPOSER_CACHE_DIR:-/home/container/.cache/composer}"
+WWW_DIR="${COMPOSER_WWW_DIR:-/home/container/www}"
 
 # Skip if disabled
-if ! [[ "$COMPOSER_STATUS" =~ ^(true|1)$ ]]; then
+enabled() { [[ "$1" =~ ^(true|1)$ ]]; }
+if ! enabled "$COMPOSER_STATUS"; then
   exit 0
 fi
 
-# Start header
-header "[composer] Installing Composer packages"
+# Ensure cache directory exists and is writable
+mkdir -p "$CACHE_DIR"
+# Optionally set ownership here if needed:
+# chown -R container:container "$CACHE_DIR"
+export COMPOSER_CACHE_DIR="$CACHE_DIR"
+
+# Start installation header
+header "Installing Composer packages"
 
 # Install modules if specified
 if [[ -n "$COMPOSER_MODULES" ]]; then
-  echo -e "${WHITE}[composer] Installing: $COMPOSER_MODULES${NC}"
+  echo -e "${WHITE}[Composer] Installing: $COMPOSER_MODULES${NC}"
   composer require $COMPOSER_MODULES \
-    --working-dir=/home/container/www \
+    --working-dir="$WWW_DIR" \
     --no-interaction --ansi
-  echo -e "${GREEN}[composer] Packages installed successfully.${NC}"
+  header "Composer installation complete"
 else
-  echo -e "${YELLOW}[composer] No Composer modules specified; skipping.${NC}"
+  echo -e "${YELLOW}[Composer] No Composer modules specified; skipping.${NC}"
 fi

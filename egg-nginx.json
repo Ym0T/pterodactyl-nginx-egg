@@ -53,15 +53,15 @@
             "field_type": "text"
         },
         {
-            "name": "Startup Command Git",
-            "description": "The startup file for Git.",
-            "env_variable": "STARTUP_COMMAND_GIT",
-            "default_value": ".\/pull-git.sh",
+            "name": "Enable LogCleaner Module",
+            "description": "Set to true to run the log cleanup module on container startup, or false to disable it.",
+            "env_variable": "LOGCLEANER_STATUS",
+            "default_value": "false",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|string",
-            "field_type": "text"
-        },
+            "rules": "required|boolean",
+            "field_type": "boolean"
+        },     
         {
             "name": "Enable Git Module",
             "description": "Set to true to enable the Git update module, or false to disable it.",

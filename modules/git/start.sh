@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'echo -e "${RED}[git] Error on line $LINENO${NC}"' ERR
+trap 'echo -e "${RED}[Git] Error on line $LINENO${NC}"' ERR
 
 # Color definitions
 BLUE='\033[0;34m'; BOLD_BLUE='\033[1;34m'
@@ -10,8 +10,8 @@ NC='\033[0m'
 
 # Header function
 header() {
-  echo -e "${BOLD_BLUE}$1${NC}"
   echo -e "${BLUE}───────────────────────────────────────────────${NC}"
+  echo -e "${BOLD_BLUE}$1${NC}"
 }
 
 # Configuration
@@ -24,23 +24,23 @@ if ! [[ "$GIT_STATUS" =~ ^(true|1)$ ]]; then
 fi
 
 # Start header
-header "[git] Checking & Updating Repository"
+header "[Git] Checking & Updating Repository"
 
 # Ensure git is available
 command -v git > /dev/null 2>&1 \
-  || { echo -e "${RED}[git] Git not installed; skipping.${NC}"; exit 0; }
+  || { echo -e "${RED}[Git] Git not installed; skipping.${NC}"; exit 0; }
 
 # Ensure target dir exists and is a repo
 if [[ ! -d "$GIT_DIR/.git" ]]; then
-  echo -e "${YELLOW}[git] No Git repo in '$GIT_DIR'; skipping.${NC}"
+  echo -e "${YELLOW}[Git] No Git repo in '$GIT_DIR'; skipping.${NC}"
   exit 0
 fi
 
 # Perform pull
 cd "$GIT_DIR"
-echo -e "${WHITE}[git] Pulling latest changes…${NC}"
+echo -e "${WHITE}[Git] Pulling latest changes…${NC}"
 if git pull; then
-  echo -e "${GREEN}[git] Repository updated successfully.${NC}"
+  echo -e "${GREEN}[Git] Repository updated successfully.${NC}"
 else
-  echo -e "${RED}[git] Failed to pull latest changes.${NC}"
+  echo -e "${RED}[Git] Failed to pull latest changes.${NC}"
 fi

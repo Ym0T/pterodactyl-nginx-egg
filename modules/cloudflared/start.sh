@@ -10,8 +10,8 @@ NC='\033[0m'
 
 # header function
 header() {
-  echo -e "${BOLD_BLUE}[Tunnel] $1${NC}"
   echo -e "${BLUE}───────────────────────────────────────────────${NC}"
+  echo -e "${BOLD_BLUE}[Tunnel] $1${NC}"
 }
 
 # Configuration via environment variables
@@ -64,7 +64,7 @@ for ((i=1; i<=CLOUDFLARED_MAX_ATTEMPTS; i++)); do
 
   if ! kill -0 "$pid" 2>/dev/null; then
     echo -e "${RED}[Tunnel] Cloudflared process died; check logs: $CLOUDFLARED_LOG_FILE${NC}"
-    tail -n 10 "$CLOUDFLARED_LOG_FILE" | sed "s/^/${RED}/;s/\$/${NC}/"
+    tail -n 10 "$CLOUDFLARED_LOG_FILE" | sed "s/^//;s/\$//"
     exit 1
   fi
 
@@ -78,5 +78,5 @@ done
 # Timeout
 header "Connection timeout"
 echo -e "${RED}[Tunnel] No successful connection within ${CLOUDFLARED_MAX_ATTEMPTS}s; check logs: $CLOUDFLARED_LOG_FILE${NC}"
-tail -n 10 "$CLOUDFLARED_LOG_FILE" | sed "s/^/${RED}/;s/\$/${NC}/"
+tail -n 10 "$CLOUDFLARED_LOG_FILE" | sed "s/^//;s/\$//"
 exit 1

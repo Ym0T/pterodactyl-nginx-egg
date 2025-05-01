@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'echo -e "${YELLOW}[startup] Error on line $LINENO${NC}"' ERR
+trap 'echo -e "${YELLOW}[Startup] Error on line $LINENO${NC}"' ERR
 
 # Color definitions
 BLUE='\033[0;34m'; BOLD_BLUE='\033[1;34m'
@@ -10,8 +10,8 @@ UNDERLINE='\033[4m'; NC='\033[0m'
 
 # Header function
 header() {
-  echo -e "${BOLD_BLUE}$1${NC}"
   echo -e "${BLUE}───────────────────────────────────────────────${NC}"
+  echo -e "${BOLD_BLUE}$1${NC}"
 }
 
 # Configurable paths/files via env vars with defaults
@@ -27,23 +27,23 @@ if command -v "php-fpm${PHP_VERSION}" >/dev/null 2>&1; then
 elif command -v php-fpm >/dev/null 2>&1; then
   PHP_FPM_BIN=php-fpm
 else
-  echo -e "${RED}[startup] ERROR: php-fpm${PHP_VERSION} not found; this may indicate a version mismatch between your Docker image and the PHP_VERSION variable (${PHP_VERSION}).${NC}"
+  echo -e "${RED}[Startup] ERROR: php-fpm${PHP_VERSION} not found; this may indicate a version mismatch between your Docker image and the PHP_VERSION variable (${PHP_VERSION}).${NC}"
   exit 1
 fi
 
 # Start PHP-FPM
-header "[startup] Starting PHP-FPM"
-echo -e "${WHITE}[startup] Launching ${PHP_FPM_BIN} (PHP ${PHP_VERSION})${NC}"
+header "[Startup] Starting PHP-FPM"
+echo -e "${WHITE}[Startup] Launching ${PHP_FPM_BIN} (PHP ${PHP_VERSION})${NC}"
 "$PHP_FPM_BIN" \
   -c "$PHP_INI" \
   --fpm-config "$PHP_FPM_CONF" \
   --daemonize > /dev/null 2>&1 || {
-    echo -e "${RED}[startup] ERROR: Failed to launch ${PHP_FPM_BIN}. Please check that your PHP_VERSION matches the installed php-fpm binary.${NC}"
+    echo -e "${RED}[Startup] ERROR: Failed to launch ${PHP_FPM_BIN}. Please check that your PHP_VERSION matches the installed php-fpm binary.${NC}"
     exit 1
   }
 
 # Success message
-echo -e "${GREEN}[startup] Services successfully launched!${NC}"
+echo -e "${GREEN}[Startup] Services successfully launched!${NC}"
 
 # Brief pause
 sleep 1
