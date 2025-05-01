@@ -4,8 +4,8 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2025-04-03T22:34:54+02:00",
-    "name": "Pterodactyl Nginx Egg",
+    "exported_at": "2025-05-01T00:00:04+02:00",
+    "name": "Pterodactyl Nginx Egg v2",
     "author": "YmoT@tuta.com",
     "description": "Pterodactyl Nginx Egg\r\n\r\nThe Pterodactyl Nginx Egg is a web server solution for Pterodactyl, featuring Nginx, PHP, Git support, Cloudflare Tunnel integration, composer and optional WordPress installation. It supports AMD64 & ARM64 architectures and allows users to choose their preferred PHP version (8.0 \u2013 8.4).\r\nKey Features:\r\n\r\n\u2705 Supports multiple PHP versions\r\n\u2705 Git integration for automatic deployment\r\n\u2705 Cloudflare Tunnel support for secure remote access\r\n\u2705 Optional WordPress setup\r\n\u2705 HTTPS configuration support\r\n\u2705 Automatic updates for Git repositories",
     "features": null,
@@ -17,31 +17,21 @@
         "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.0-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.0-latest"
     },
     "file_denylist": [],
-    "startup": "echo \"{{PHP_VERSION}}\" > \"php_version.txt\";\r\n\r\nif [ \"{{GIT_UPDATE}}\" = \"1\" ]; then \r\n    {{STARTUP_COMMAND_GIT}}; \r\nfi;\r\n\r\nif [ \"{{CLOUDFLARED_STATUS}}\" = \"1\" ]; then \r\n    echo \"{{CLOUDFLARED_TOKEN}}\" > \"cloudflared_token.txt\";\r\n    {{STARTUP_COMMAND_CLOUDFLARED}};\r\nfi;\r\n\r\nif [[ -n \"{{COMPOSER_MODULES}}\" ]]; then\r\n  composer require {{COMPOSER_MODULES}} --working-dir=\/home\/container\/www --no-interaction --ansi;\r\nfi;\r\n\r\n{{STARTUP_COMMAND}};",
+    "startup": "./start-modules.sh",
     "config": {
-        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    },\r\n    \"php\/php.ini\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"memory_limit =\": \"memory_limit = {{env.MEMORY_LIMIT}};\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"Services successfully launched\"\r\n}",
         "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
         "stop": "^C & ^C"
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\n\r\n# [SETUP] Install necessary packages, including git\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget perl perl-doc fcgiwrap\r\n\r\n# Change to server directory\r\ncd \/mnt\/server\r\n\r\n# [SETUP] Create necessary folders\r\necho -e \"[SETUP] Create folders\"\r\nmkdir -p logs tmp www\r\n\r\n# Clone the default repository into a temporary directory\r\necho \"[Git] Cloning default repository 'https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg' into temporary directory.\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg \/mnt\/server\/gtemp > \/dev\/null 2>&1 && echo \"[Git] Repository cloned successfully.\" || { echo \"[Git] Error: Default repository clone failed.\"; exit 21; }\r\n\r\n# Copy the www folder and files from the temporary repository to the target directory\r\necho \"[Git] Copying folder and files from default repository.\"\r\ncp -r \/mnt\/server\/gtemp\/nginx \/mnt\/server || { echo \"[Git] Error: Copying 'nginx' folder failed.\"; exit 22; }\r\ncp -r \/mnt\/server\/gtemp\/php \/mnt\/server || { echo \"[Git] Error: Copying 'php' folder failed.\"; exit 22; }\r\ncp \/mnt\/server\/gtemp\/nginx.sh \/mnt\/server || { echo \"[Git] Error: Copying 'nginx.sh' file failed.\"; exit 22; }\r\ncp \/mnt\/server\/gtemp\/pull-git.sh \/mnt\/server || { echo \"[Git] Error: Copying 'pull-git.sh' file failed.\"; exit 22; }\r\ncp \/mnt\/server\/gtemp\/cloudflared.sh \/mnt\/server || { echo \"[Git] Error: Copying 'cloudflared.sh' file failed.\"; exit 22; }\r\ncp \/mnt\/server\/gtemp\/LICENSE \/mnt\/server || { echo \"[Git] Error: Copying 'LICENSE' file failed.\"; exit 22; }\r\nchmod +x \/mnt\/server\/nginx.sh \/mnt\/server\/pull-git.sh \/mnt\/server\/cloudflared.sh\r\n\r\n# Remove the temporary cloned repository\r\nrm -rf \/mnt\/server\/gtemp\r\n\r\n# Check if GIT_ADDRESS is set\r\nif [ -z \"${GIT_ADDRESS}\" ]; then\r\n    echo \"[Git] Info: GIT_ADDRESS is not set.\"\r\n    echo \"[Git] Git operations are disabled. Skipping Git actions.\"\r\nelse\r\n    # Add .git suffix to GIT_ADDRESS if it's not present\r\n    if [[ ${GIT_ADDRESS} != *.git ]]; then\r\n        GIT_ADDRESS=\"${GIT_ADDRESS}.git\"\r\n        echo \"[Git] Added .git suffix to GIT_ADDRESS: ${GIT_ADDRESS}\"\r\n    fi\r\n\r\n    # If username and access token are provided, use authenticated access\r\n    if [ -n \"${USERNAME}\" ] && [ -n \"${ACCESS_TOKEN}\" ]; then\r\n        echo \"[Git] Using authenticated Git access.\"\r\n        \r\n        # Extract the domain and the rest of the URL, ensuring the correct format\r\n        GIT_DOMAIN=$(echo \"${GIT_ADDRESS}\" | cut -d\/ -f3)\r\n        GIT_REPO=$(echo \"${GIT_ADDRESS}\" | cut -d\/ -f4-) # Rest of the URL after the domain\r\n        \r\n        # Construct the authenticated Git URL\r\n        GIT_ADDRESS=\"https:\/\/${USERNAME}:${ACCESS_TOKEN}@${GIT_DOMAIN}\/${GIT_REPO}\"\r\n        \r\n        echo \"[Git] Updated GIT_ADDRESS for authenticated access: ${GIT_ADDRESS}\"\r\n    else\r\n        echo \"[Git] Using anonymous Git access.\"\r\n    fi\r\n\r\n    # Check if the 'www' directory exists, if not create it\r\n    if [ ! -d \/mnt\/server\/www ]; then\r\n        echo \"[Git] Creating \/mnt\/server\/www directory.\"\r\n        mkdir -p \/mnt\/server\/www\r\n        else\r\n        rm -R \/mnt\/server\/www && mkdir -p \/mnt\/server\/www\r\n    fi\r\n\r\n    cd \/mnt\/server\/www || { echo \"[Git] Error: Could not access \/mnt\/server\/www directory.\"; exit 1; }\r\n\r\n    if [ \"$(ls -A \/mnt\/server\/www)\" ]; then\r\n        echo \"[Git] \/mnt\/server\/www directory is not empty.\"\r\n        \r\n        # Check if .git directory exists in 'www'\r\n        if [ -d .git ]; then\r\n            echo \"[Git] .git directory exists in 'www'.\"\r\n\r\n            # Check if .git\/config exists in 'www'\r\n            if [ -f .git\/config ]; then\r\n                echo \"[Git] Loading repository info from git config in 'www'.\"\r\n                ORIGIN=$(git config --get remote.origin.url)\r\n            else\r\n                echo \"[Git] Error: .git\/config not found in 'www'. The directory may contain files, but it's not a valid Git repository.\"\r\n                exit 10\r\n            fi\r\n        else\r\n            echo \"[Git] Error: Directory contains files but no Git repository found in 'www'.\"\r\n            exit 11\r\n        fi\r\n\r\n        # Check if origin matches the provided GIT_ADDRESS\r\n        if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n            echo \"[Git] Repository origin matches. Pulling latest changes from ${GIT_ADDRESS} in 'www'.\"\r\n            git pull || { echo \"[Git] Error: git pull failed for 'www'.\"; exit 12; }\r\n        else\r\n            echo \"[Git] Error: Repository origin does not match the provided GIT_ADDRESS in 'www'.\"\r\n            exit 13\r\n        fi\r\n    else\r\n        # The directory is empty, clone the repository\r\n        echo \"[Git] \/mnt\/server\/www directory is empty. Cloning ${GIT_ADDRESS} into \/mnt\/server\/www.\"\r\n        git clone ${GIT_ADDRESS} . > \/dev\/null 2>&1 && echo \"[Git] Repository cloned successfully.\" || { echo \"[Git] Error: git clone failed for 'www'.\"; exit 14; }\r\n    fi\r\nfi\r\n\r\n# Check if WordPress should be installed\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]; then\r\n        echo \"[SETUP] Install WordPress\"\r\n        cd \/mnt\/server\/www\r\n        wget -q http:\/\/wordpress.org\/latest.tar.gz > \/dev\/null 2>&1 || { echo \"[SETUP] Error: Downloading WordPress failed.\"; exit 16; }\r\n        tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n        mv wordpress\/* .\r\n        rm -rf wordpress latest.tar.gz\r\n        echo \"[SETUP] WordPress installed - http:\/\/ip:port\/wp-admin\"\r\n    elif [ -z \"${GIT_ADDRESS}\" ]; then\r\n        # Create a simple PHP info page if WordPress is not installed\r\n        echo \"<?php phpinfo(); ?>\" > \"www\/index.php\"\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed successfully\"\r\necho -e \"[INFO] You can now start the nginx web server\"",
+            "script": "#!\/bin\/bash\r\n\r\n# [SETUP] Install necessary packages, including git\r\necho -e \"[SETUP] Install packages\"\r\napt-get update -qq > \/dev\/null 2>&1 && apt-get install -qq > \/dev\/null 2>&1 -y git wget perl perl-doc fcgiwrap\r\n\r\n# Change to server directory\r\ncd \/mnt\/server\r\n\r\n# [SETUP] Create necessary folders\r\necho -e \"[SETUP] Create folders\"\r\nmkdir -p logs tmp www\r\n\r\n# Clone the default repository into a temporary directory\r\necho \"[Git] Cloning default repository 'https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg' into temporary directory.\"\r\ngit clone https:\/\/github.com\/Ym0T\/pterodactyl-nginx-egg \/mnt\/server\/gtemp > \/dev\/null 2>&1 && echo \"[Git] Repository cloned successfully.\" || { echo \"[Git] Error: Default repository clone failed.\"; exit 21; }\r\n\r\n# Copy the www folder and files from the temporary repository to the target directory\r\necho \"[Git] Copying folder and files from default repository.\"\r\ncp -r \/mnt\/server\/gtemp\/nginx \/mnt\/server || { echo \"[Git] Error: Copying 'nginx' folder failed.\"; exit 22; }\r\ncp -r \/mnt\/server\/gtemp\/php \/mnt\/server || { echo \"[Git] Error: Copying 'php' folder failed.\"; exit 22; }\r\ncp -r \/mnt\/server\/gtemp\/modules \/mnt\/server || { echo \"[Git] Error: Copying 'modules' folder failed.\"; exit 22; }\r\ncp \/mnt\/server\/gtemp\/start-modules.sh \/mnt\/server || { echo \"[Git] Error: Copying 'start-modules.sh' file failed.\"; exit 22; }\r\ncp \/mnt\/server\/gtemp\/LICENSE \/mnt\/server || { echo \"[Git] Error: Copying 'LICENSE' file failed.\"; exit 22; }\r\nchmod +x \/mnt\/server\/start-modules.sh\r\nfind \/mnt\/server\/modules -type f -name \"*.sh\" -exec chmod +x {} \\;\r\n\r\n# Remove the temporary cloned repository\r\nrm -rf \/mnt\/server\/gtemp\r\n\r\n# Check if GIT_ADDRESS is set\r\nif [ -z \"${GIT_ADDRESS}\" ]; then\r\n    echo \"[Git] Info: GIT_ADDRESS is not set.\"\r\n    echo \"[Git] Git operations are disabled. Skipping Git actions.\"\r\nelse\r\n    # Add .git suffix to GIT_ADDRESS if it's not present\r\n    if [[ ${GIT_ADDRESS} != *.git ]]; then\r\n        GIT_ADDRESS=\"${GIT_ADDRESS}.git\"\r\n        echo \"[Git] Added .git suffix to GIT_ADDRESS: ${GIT_ADDRESS}\"\r\n    fi\r\n\r\n    # If username and access token are provided, use authenticated access\r\n    if [ -n \"${USERNAME}\" ] && [ -n \"${ACCESS_TOKEN}\" ]; then\r\n        echo \"[Git] Using authenticated Git access.\"\r\n        \r\n        # Extract the domain and the rest of the URL, ensuring the correct format\r\n        GIT_DOMAIN=$(echo \"${GIT_ADDRESS}\" | cut -d\/ -f3)\r\n        GIT_REPO=$(echo \"${GIT_ADDRESS}\" | cut -d\/ -f4-) # Rest of the URL after the domain\r\n        \r\n        # Construct the authenticated Git URL\r\n        GIT_ADDRESS=\"https:\/\/${USERNAME}:${ACCESS_TOKEN}@${GIT_DOMAIN}\/${GIT_REPO}\"\r\n        \r\n        echo \"[Git] Updated GIT_ADDRESS for authenticated access: ${GIT_ADDRESS}\"\r\n    else\r\n        echo \"[Git] Using anonymous Git access.\"\r\n    fi\r\n\r\n    # Check if the 'www' directory exists, if not create it\r\n    if [ ! -d \/mnt\/server\/www ]; then\r\n        echo \"[Git] Creating \/mnt\/server\/www directory.\"\r\n        mkdir -p \/mnt\/server\/www\r\n        else\r\n        rm -R \/mnt\/server\/www && mkdir -p \/mnt\/server\/www\r\n    fi\r\n\r\n    cd \/mnt\/server\/www || { echo \"[Git] Error: Could not access \/mnt\/server\/www directory.\"; exit 1; }\r\n\r\n    if [ \"$(ls -A \/mnt\/server\/www)\" ]; then\r\n        echo \"[Git] \/mnt\/server\/www directory is not empty.\"\r\n        \r\n        # Check if .git directory exists in 'www'\r\n        if [ -d .git ]; then\r\n            echo \"[Git] .git directory exists in 'www'.\"\r\n\r\n            # Check if .git\/config exists in 'www'\r\n            if [ -f .git\/config ]; then\r\n                echo \"[Git] Loading repository info from git config in 'www'.\"\r\n                ORIGIN=$(git config --get remote.origin.url)\r\n            else\r\n                echo \"[Git] Error: .git\/config not found in 'www'. The directory may contain files, but it's not a valid Git repository.\"\r\n                exit 10\r\n            fi\r\n        else\r\n            echo \"[Git] Error: Directory contains files but no Git repository found in 'www'.\"\r\n            exit 11\r\n        fi\r\n\r\n        # Check if origin matches the provided GIT_ADDRESS\r\n        if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n            echo \"[Git] Repository origin matches. Pulling latest changes from ${GIT_ADDRESS} in 'www'.\"\r\n            git pull || { echo \"[Git] Error: git pull failed for 'www'.\"; exit 12; }\r\n        else\r\n            echo \"[Git] Error: Repository origin does not match the provided GIT_ADDRESS in 'www'.\"\r\n            exit 13\r\n        fi\r\n    else\r\n        # The directory is empty, clone the repository\r\n        echo \"[Git] \/mnt\/server\/www directory is empty. Cloning ${GIT_ADDRESS} into \/mnt\/server\/www.\"\r\n        git clone ${GIT_ADDRESS} . > \/dev\/null 2>&1 && echo \"[Git] Repository cloned successfully.\" || { echo \"[Git] Error: git clone failed for 'www'.\"; exit 14; }\r\n    fi\r\nfi\r\n\r\n# Check if WordPress should be installed\r\nif [ \"${WORDPRESS}\" == \"true\" ] || [ \"${WORDPRESS}\" == \"1\" ]; then\r\n        echo \"[SETUP] Install WordPress\"\r\n        cd \/mnt\/server\/www\r\n        wget -q http:\/\/wordpress.org\/latest.tar.gz > \/dev\/null 2>&1 || { echo \"[SETUP] Error: Downloading WordPress failed.\"; exit 16; }\r\n        tar xzf latest.tar.gz >\/dev\/null 2>&1\r\n        mv wordpress\/* .\r\n        rm -rf wordpress latest.tar.gz\r\n        echo \"[SETUP] WordPress installed - http:\/\/ip:port\/wp-admin\"\r\n    elif [ -z \"${GIT_ADDRESS}\" ]; then\r\n        # Create a simple PHP info page if WordPress is not installed\r\n        echo \"<?php phpinfo(); ?>\" > \"www\/index.php\"\r\nfi\r\n\r\necho -e \"[DONE] Everything has been installed successfully\"\r\necho -e \"[INFO] You can now start the nginx web server\"",
             "container": "debian:bookworm-slim",
             "entrypoint": "bash"
         }
     },
     "variables": [
-        {
-            "name": "Startup Command",
-            "description": "The startup file for Nginx.",
-            "env_variable": "STARTUP_COMMAND",
-            "default_value": ".\/nginx.sh",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|string",
-            "field_type": "text"
-        },
         {
             "name": "Wordpress",
             "description": "Enable or disable Wordpress \r\n\r\n0 = false (default) \r\n1 = true",
@@ -63,33 +53,23 @@
             "field_type": "text"
         },
         {
-            "name": "Memory_limit",
-            "description": "Change the memory_limit value from the php.ini file",
-            "env_variable": "MEMORY_LIMIT",
-            "default_value": "128M",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|string|max:20",
-            "field_type": "text"
-        },
-        {
-            "name": "Git auto update",
-            "description": "Enable or disable (pull latest files). 1 = on and 0 = off",
-            "env_variable": "GIT_UPDATE",
-            "default_value": "0",
+            "name": "Enable LogCleaner Module",
+            "description": "Set to true to run the log cleanup module on container startup, or false to disable it.",
+            "env_variable": "LOGCLEANER_STATUS",
+            "default_value": "false",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|boolean",
-            "field_type": "text"
-        },
+            "field_type": "boolean"
+        },     
         {
-            "name": "Startup Command Git",
-            "description": "The startup file for Git.",
-            "env_variable": "STARTUP_COMMAND_GIT",
-            "default_value": ".\/pull-git.sh",
+            "name": "Enable Git Module",
+            "description": "Set to true to enable the Git update module, or false to disable it.",
+            "env_variable": "GIT_STATUS",
+            "default_value": "false",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|string",
+            "rules": "required|boolean",
             "field_type": "text"
         },
         {
@@ -133,18 +113,18 @@
             "field_type": "text"
         },
         {
-            "name": "Cloudflare Tunnel",
-            "description": "Activate or deactivate cloudflared - https:\/\/developers.cloudflare.com\/cloudflare-one\/connections\/connect-networks\/",
+            "name": "Enable Cloudflare Tunnel",
+            "description": "Set to true to start the Cloudflared tunnel on container startup, or false to skip it.",
             "env_variable": "CLOUDFLARED_STATUS",
-            "default_value": "0",
+            "default_value": "false",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|boolean",
             "field_type": "text"
         },
         {
-            "name": "Cloudflare Tunnel token",
-            "description": "The authentication token required to connect to Cloudflare's Tunnel service typically starts with ey....",
+            "name": "Cloudflared Tunnel Token",
+            "description": "The authentication token used to connect to the Cloudflare Tunnel service (typically starts with \"ey...\").",
             "env_variable": "CLOUDFLARED_TOKEN",
             "default_value": "",
             "user_viewable": true,
@@ -153,18 +133,18 @@
             "field_type": "text"
         },
         {
-            "name": "Startup command Cloudflared",
-            "description": "The startup file for Cloudflared.",
-            "env_variable": "STARTUP_COMMAND_CLOUDFLARED",
-            "default_value": ".\/cloudflared.sh",
+            "name": "Enable Composer Module",
+            "description": "Enable or disable Composer package installation",
+            "env_variable": "COMPOSER_STATUS",
+            "default_value": "false",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|string",
+            "rules": "required|boolean",
             "field_type": "text"
         },
         {
-            "name": "Composer modules",
-            "description": "Enter a space-separated list of Composer packages with their version constraints to be installed. For example: vendor\/package1:^2.0 vendor\/package2:~1.5",
+            "name": "Composer Packages",
+            "description": "Space-separated list of Composer packages to install",
             "env_variable": "COMPOSER_MODULES",
             "default_value": "",
             "user_viewable": true,

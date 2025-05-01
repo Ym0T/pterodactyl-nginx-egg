@@ -4,16 +4,18 @@ Pterodactyl Nginx web server egg with PHP8.x, Wordpress, Git, Composer & Cloudfl
 <br><br>
 ## Features
 
-#### 🔹 PHP Composer support
-#### 🔹 Supports AMD64 & ARM64
-#### 🔹 Cloudflare Tunnel support
-#### 🔹 Git support for your webserver
-#### 🔹 You can select the desired PHP version:
-- ✅ 8.4
-- ✅ 8.3
-- ✅ 8.2 [Only critical security updates]
-- ✅ 8.1 [Only critical security updates]
-- ☑️ 8.0 [EOL]
+🔹 **LogCleaner**: Cleans `/tmp` and old/oversized logs with dry-run support  
+  🔹 **Git Module**: Auto-pulls updates in your repository  
+  🔹 **Composer Module**: Installs user-specified Composer packages at startup  
+  🔹 **Cloudflare Tunnel**: Background tunnel with token validation, PID & log monitoring  
+  🔹 **PHP-NGINX Startup**: Auto-detects PHP-FPM version; runs NGINX in the foreground  
+  🔹 **Multi-Arch Support**: Works on AMD64 & ARM64 images  
+  🔹 **Selectable PHP Versions**:  
+  - ✅ 8.4  
+  - ✅ 8.3  
+  - ☑️ 8.2 [security-only]  
+  - ☑️ 8.1 [security-only]  
+  - ❌ 8.0 [EOL] 
 
 [PHP supported versions](https://www.php.net/supported-versions.php)
 <br><br>

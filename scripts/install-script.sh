@@ -19,11 +19,11 @@ git clone https://github.com/Ym0T/pterodactyl-nginx-egg /mnt/server/gtemp > /dev
 echo "[Git] Copying folder and files from default repository."
 cp -r /mnt/server/gtemp/nginx /mnt/server || { echo "[Git] Error: Copying 'nginx' folder failed."; exit 22; }
 cp -r /mnt/server/gtemp/php /mnt/server || { echo "[Git] Error: Copying 'php' folder failed."; exit 22; }
-cp /mnt/server/gtemp/nginx.sh /mnt/server || { echo "[Git] Error: Copying 'nginx.sh' file failed."; exit 22; }
-cp /mnt/server/gtemp/pull-git.sh /mnt/server || { echo "[Git] Error: Copying 'pull-git.sh' file failed."; exit 22; }
-cp /mnt/server/gtemp/cloudflared.sh /mnt/server || { echo "[Git] Error: Copying 'cloudflared.sh' file failed."; exit 22; }
+cp -r /mnt/server/gtemp/modules /mnt/server || { echo "[Git] Error: Copying 'modules' folder failed."; exit 22; }
+cp /mnt/server/gtemp/start-modules.sh /mnt/server || { echo "[Git] Error: Copying 'start-modules.sh' file failed."; exit 22; }
 cp /mnt/server/gtemp/LICENSE /mnt/server || { echo "[Git] Error: Copying 'LICENSE' file failed."; exit 22; }
-chmod +x /mnt/server/nginx.sh /mnt/server/pull-git.sh /mnt/server/cloudflared.sh
+chmod +x /mnt/server/start-modules.sh
+find /mnt/server/modules -type f -name "*.sh" -exec chmod +x {} \;
 
 # Remove the temporary cloned repository
 rm -rf /mnt/server/gtemp
