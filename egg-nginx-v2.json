@@ -19,7 +19,7 @@
     "file_denylist": [],
     "startup": "./start-modules.sh",
     "config": {
-        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"listen {{server.build.default.port}};\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"nginx\/conf.d\/default.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"    listen\": \"    listen {{server.build.default.port}};\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"Services successfully launched\"\r\n}",
         "logs": "{\r\n    \"location\": \"logs\/latest.log\"\r\n}",
         "stop": "^C & ^C"
