@@ -94,6 +94,25 @@ RUN apt-get update && apt-get install -y \
     && chmod +x /usr/local/bin/composer \
     && rm -rf /var/lib/apt/lists/*
 
+RUN set -eux; \
+    ARCH=$(uname -m); \
+    PHP_EXT_DIR=$(php -r "echo ini_get('extension_dir');"); \
+    PHP_MAJOR_VERSION=$(php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;"); \
+    if [ "$ARCH" = "x86_64" ]; then \
+        IONCUBE_ARCH="x86-64"; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        IONCUBE_ARCH="aarch64"; \
+    else \
+        echo "Unsupported architecture: $ARCH" >&2; exit 1; \
+    fi; \
+    cd /tmp; \
+    wget -O ioncube.tar.gz "https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_${IONCUBE_ARCH}.tar.gz"; \
+    tar xzf ioncube.tar.gz; \
+    cp ioncube/ioncube_loader_lin_${PHP_MAJOR_VERSION}.so "$PHP_EXT_DIR"; \
+    echo "zend_extension=${PHP_EXT_DIR}/ioncube_loader_lin_${PHP_MAJOR_VERSION}.so" > /etc/php/${PHP_VERSION}/cli/conf.d/00-ioncube.ini; \
+    echo "zend_extension=${PHP_EXT_DIR}/ioncube_loader_lin_${PHP_MAJOR_VERSION}.so" > /etc/php/${PHP_VERSION}/fpm/conf.d/00-ioncube.ini; \
+    rm -rf /tmp/ioncube*
+
 # Create user and set environment variables
 RUN useradd -m -d /home/container/ -s /bin/bash container \
     && echo "USER=container" >> /etc/environment \
