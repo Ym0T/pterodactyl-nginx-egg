@@ -15,7 +15,6 @@ Pterodactyl Nginx web server egg with PHP8.x, Wordpress, Git, Composer & Cloudfl
   - ✅ 8.3  
   - ☑️ 8.2 [security-only]  
   - ☑️ 8.1 [security-only]  
-  - ❌ 8.0 [EOL] 
 
 [PHP supported versions](https://www.php.net/supported-versions.php)
 <br><br>
