@@ -150,6 +150,26 @@
             "user_editable": true,
             "rules": "nullable|string",
             "field_type": "text"
+        },
+        {
+            "name": "Enable Cron Module",
+            "description": "Enable cron job scheduling for automated tasks like Laravel scheduler",
+            "env_variable": "CRON_STATUS",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Cron Config File",
+            "description": "Path to crontab configuration file",
+            "env_variable": "CRON_CONFIG_FILE",
+            "default_value": "/home/container/cron/crontab",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
         }
     ]
 }
