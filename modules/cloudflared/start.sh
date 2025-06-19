@@ -40,7 +40,7 @@ if [[ -z "$CLOUDFLARED_TOKEN" ]]; then
 fi
 
 # Launch Cloudflared
-echo -e "${WHITE}[Tunnel] Launching cloudflared tunnel...${NC}"
+echo -e "${WHITE}[Tunnel] Launching Cloudflared tunnel...${NC}"
 # Note: flags must appear before 'run'
 cloudflared tunnel --no-autoupdate run --token "$CLOUDFLARED_TOKEN" \
   > "$CLOUDFLARED_LOG_FILE" 2>&1 &
