@@ -165,7 +165,7 @@
             "name": "Cron Config File",
             "description": "Path to crontab configuration file",
             "env_variable": "CRON_CONFIG_FILE",
-            "default_value": "/home/container/cron/crontab",
+            "default_value": "/home/container/crontab",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",
