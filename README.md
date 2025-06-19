@@ -1,7 +1,7 @@
 
 # Pterodactyl Nginx Egg
 
-A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, ionCube Loader, and Cloudflare Tunnel support.
+A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, Cronjob, ionCube Loader, and Cloudflare Tunnel support.
 
 <br>
 
@@ -12,6 +12,7 @@ A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, 
 - [ionCube Loader Support](#ioncube-loader-support)
 - [Cloudflared Tunnel Tutorial 🚀](#-cloudflared-tunnel-tutorial)
 - [Git Module](#git-module)
+- [Cronjob](#cronjob)
 - [Change PHP version](#change-php-version)
 - [PHP extensions](#php-extensions)
 - [Notes](#notes)
@@ -154,6 +155,42 @@ With **Cloudflared**, you can create a secure tunnel to your server, making it a
 - Enable Git by setting the `GIT_STATUS` variable to `1` or `true`  
 - On server creation, your repo will be cloned into the `www` folder  
 - On each restart, `git pull` runs to update the files  
+
+<br>
+
+## Cronjob
+
+This egg includes a **container-native cron engine** for automated task scheduling without requiring system cron.
+
+### How it works:
+
+- Enable cron by setting the `CRON_STATUS` variable to `1` or `true`
+- Create or edit `/home/container/crontab` with your scheduled tasks
+- The cron engine runs automatically in the background and executes jobs at the specified times
+- All execution logs are saved to `/home/container/logs/cron.log`
+
+### Cron Job Examples:
+
+```bash
+# Run every minute
+* * * * * echo "$(date): Task executed" >> /home/container/logs/task.log
+
+# Daily backup at 2 AM
+0 2 * * * tar -czf /home/container/backups/backup-$(date +%Y%m%d).tar.gz /home/container/www
+
+# Clean old logs weekly (Sundays at midnight)
+0 0 * * 0 find /home/container/logs -name "*.log" -mtime +7 -delete
+
+# Laravel Scheduler (if using Laravel)
+* * * * * cd /home/container/www && /usr/bin/php artisan schedule:run >> /home/container/logs/scheduler.log 2>&1
+```
+
+### Notes:
+
+- Uses **custom cron engine** - no system cron dependency required
+- Supports **command substitution** like `$(date)` and environment variables
+- **Always use absolute paths** in cron commands
+- The cron engine starts automatically with the container
 
 <br>
 
