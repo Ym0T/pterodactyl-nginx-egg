@@ -3,6 +3,7 @@ set -euo pipefail
 trap 'echo -e "${YELLOW}[Startup] Error on line $LINENO${NC}"' ERR
 
 # Color definitions
+RED='\033[0;31m'
 BLUE='\033[0;34m'; BOLD_BLUE='\033[1;34m'
 WHITE='\033[0;37m'; GREEN='\033[0;32m'
 YELLOW='\033[0;33m'; CYAN='\033[1;36m'
