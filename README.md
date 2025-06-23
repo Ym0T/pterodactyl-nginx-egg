@@ -1,13 +1,13 @@
-
 # Pterodactyl Nginx Egg
 
-A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, Cronjob, ionCube Loader, and Cloudflare Tunnel support.
+A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, Cronjob, ionCube Loader, Auto-Update, and Cloudflare Tunnel support.
 
 <br>
 
 ## Table of Contents
 - [Features](#features)
 - [Installation](#installation)
+- [Auto-Update System](#auto-update-system)
 - [Composer Modules Usage](#composer-modules-usage)
 - [ionCube Loader Support](#ioncube-loader-support)
 - [Cloudflared Tunnel Tutorial 🚀](#-cloudflared-tunnel-tutorial)
@@ -22,6 +22,7 @@ A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, 
 
 ## Features
 
+- 🔄 **Auto-Update**: Automatically checks for and applies updates via Tavuru API
 - 🧹 LogCleaner: Cleans `/tmp` and old logs (dry-run supported)  
 - 🌱 Git Module: Auto `git pull` on restart  
 - 📦 Composer Module: Installs packages from `composer.json` or a fallback variable  
@@ -41,12 +42,76 @@ A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, 
 
 ## Installation
 
-1. Download the egg file (`egg-nginx.json`)  
+1. Download the egg file (`egg-nginx-v2.json`)  
 2. In your Pterodactyl panel, navigate to **Nests** in the sidebar  
 3. Import the egg under **Import Egg**  
 4. Create a new server and select the **Nginx** egg  
 5. Choose the Docker image matching your desired PHP version  
 6. Fill in all required variables, including whether WordPress is desired and the PHP version field (must be set explicitly)  
+
+<br>
+
+## Auto-Update System
+
+The egg includes an intelligent auto-update system that keeps your installation current with the latest features and security updates.
+
+### How it works:
+
+- **Automatic Version Checking**: Uses the Tavuru API to check for new releases
+- **Smart Differential Updates**: Downloads only changed files, not the entire codebase
+- **Selective Updates**: Only updates core system files (modules, nginx, php configs)
+- **User Data Protection**: Never touches your `www` directory or user data
+- **Self-Update Capability**: Can safely update its own update mechanism
+
+### Configuration:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTOUPDATE_STATUS` | `1` | Enable (`1`) or disable (`0`) auto-update checks |
+| `AUTOUPDATE_FORCE` | `0` | Automatically apply updates (`1`) or just check (`0`) |
+
+### Update Behavior:
+
+#### **Conservative Mode (Default)**
+- `AUTOUPDATE_STATUS=1`, `AUTOUPDATE_FORCE=0`
+- Checks for updates and shows availability
+- Shows version information and changelog
+- Updates must be manually approved
+
+#### **Automatic Mode**
+- `AUTOUPDATE_STATUS=1`, `AUTOUPDATE_FORCE=1`
+- Automatically downloads and applies updates
+- Shows detailed progress during updates
+- Creates backups before applying changes
+
+#### **Disabled Mode**
+- `AUTOUPDATE_STATUS=0`
+- Skips all update operations
+- Useful for production environments requiring manual updates
+
+### Example Output:
+
+```bash
+[AutoUpdate] Current version: v2.1.0
+[AutoUpdate] Latest version: v2.2.0
+[AutoUpdate] ⚠ Update available: v2.1.0 → v2.2.0
+[AutoUpdate] Update summary:
+  • Total changes: 15
+  • Files added: 3
+  • Files modified: 8
+  • Files removed: 2
+[AutoUpdate] ✓ Update completed successfully
+```
+
+### What Gets Updated:
+
+- ✅ **Module scripts** (modules/)
+- ✅ **Nginx configurations** (nginx/)
+- ✅ **PHP configurations** (php/)
+- ✅ **Core scripts** (start-modules.sh)
+- ✅ **Documentation** (README.md, LICENSE)
+- ❌ **User content** (www/ directory)
+- ❌ **User data** (logs, uploads, databases)
 
 <br>
 
@@ -137,7 +202,7 @@ With **Cloudflared**, you can create a secure tunnel to your server, making it a
 
 ---
 
-- 🔹 **Step 10: Depending on the type, select http and URL always “localhost” + the web server port**
+- 🔹 **Step 10: Depending on the type, select http and URL always "localhost" + the web server port**
 
 ![grafik](https://github.com/user-attachments/assets/7b1a4e91-50f3-4fcb-a0da-7eed611ae391)
 
@@ -226,6 +291,7 @@ Core, date, libxml, openssl, pcre, zlib, filter, hash, json, random, Reflection,
 - To enable HTTPS, modify `/home/container/nginx/conf.d/default.conf` accordingly  
 - PHP extensions vary slightly per version; full list available in docs  
 - Changing PHP versions requires matching Docker image selection and restart  
+- Auto-updates are powered by the [Tavuru API](https://api.tavuru.de) for reliable version management
 
 <br>
 

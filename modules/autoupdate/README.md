@@ -163,7 +163,7 @@ Check the console output during startup for detailed information about:
 
 To reset version tracking:
 ```bash
-echo "unknown" > /home/container/version.txt
+echo "unknown" > /home/container/VERSION
 ```
 
 ## Best Practices
