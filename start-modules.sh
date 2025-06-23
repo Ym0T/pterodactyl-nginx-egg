@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ensure Unix line endings
 sed -i 's/\r$//' "$0"
-find modules -type f -name "*.sh" -exec sed -i 's/\r$//' {} +
+find modules -type f -name "*.sh" -exec sed -i 's/\r$//' {} + 2>/dev/null || true
 
 set -euo pipefail
 trap 'echo -e "${RED}[Orchestrator] Error on line $LINENO${NC}"' ERR
@@ -28,17 +28,24 @@ echo -e "\n${BOLD_BLUE}[Orchestrator] Module orchestration starting...${NC}"
 # Helper to test enabled status: true or 1
 is_enabled() { [[ "$1" =~ ^(true|1)$ ]]; }
 
-# 1) Run logcleaner first if enabled
+# 1) Run logcleaner second if enabled
 LOGCLEANER_STATUS="${LOGCLEANER_STATUS:-false}"
 if is_enabled "$LOGCLEANER_STATUS"; then
   header "Running module: logcleaner"
   modules/logcleaner/start.sh
 fi
 
-# 2) Execute other modules (except nginx and logcleaner)
+# 2) Run auto-update first if enabled (only if module exists)
+AUTOUPDATE_STATUS="${AUTOUPDATE_STATUS:-true}"
+if is_enabled "$AUTOUPDATE_STATUS" && [[ -f "modules/autoupdate/start.sh" ]]; then
+  header "Running module: autoupdate"
+  modules/autoupdate/start.sh
+fi
+
+# 3) Execute other modules (except autoupdate, logcleaner and nginx)
 for module_dir in modules/*/; do
   module_name=$(basename "$module_dir")
-  [[ "$module_name" == "logcleaner" || "$module_name" == "nginx" ]] && continue
+  [[ "$module_name" == "autoupdate" || "$module_name" == "logcleaner" || "$module_name" == "nginx" ]] && continue
   start_script="${module_dir}start.sh"
   status_var="${module_name^^}_STATUS"
   status="${!status_var:-false}"
@@ -55,7 +62,7 @@ for module_dir in modules/*/; do
   fi
 done
 
-# 3) Run nginx module last (blocking)
+# 4) Run nginx module last (blocking)
 NGINX_STATUS="${NGINX_STATUS:-true}"
 if is_enabled "$NGINX_STATUS"; then
   header "Running module: nginx"
