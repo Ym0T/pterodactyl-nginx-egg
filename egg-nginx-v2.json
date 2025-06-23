@@ -32,6 +32,26 @@
     },
     "variables": [
         {
+            "name": "Enable Auto-Update",
+            "description": "Automatically check for updates on startup using the Tavuru API",
+            "env_variable": "AUTOUPDATE_STATUS",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Force Auto-Update",
+            "description": "Automatically download and apply updates without confirmation (requires Auto-Update enabled)",
+            "env_variable": "AUTOUPDATE_FORCE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
             "name": "Wordpress",
             "description": "Enable or disable Wordpress \r\n\r\n0 = false (default) \r\n1 = true",
             "env_variable": "WORDPRESS",
@@ -39,16 +59,6 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|boolean",
-            "field_type": "text"
-        },
-        {
-            "name": "PHP Version",
-            "description": "Select the correct PHP version! See the tag behind the Docker image.  \r\nExample: Selected image (ghcr.io\/ym0t\/nginx_php:8.4)\r\nEnter in the field: 8.4",
-            "env_variable": "PHP_VERSION",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|string|max:3",
             "field_type": "text"
         },
         {
