@@ -5,7 +5,7 @@
         "update_url": null
     },
     "exported_at": "2025-06-23T20:47:50+02:00",
-    "name": "Pterodactyl Nginx Egg v2",
+    "name": "Pterodactyl Nginx Egg v3",
     "author": "YmoT@tuta.com",
     "description": "Pterodactyl Nginx Egg\r\n\r\nThe Pterodactyl Nginx Egg is a web server solution for Pterodactyl, featuring Nginx, PHP, Git support, Cloudflare Tunnel integration, composer and optional WordPress installation. It supports AMD64 & ARM64 architectures and allows users to choose their preferred PHP version (8.0 \u2013 8.4).\r\nKey Features:\r\n\r\n\u2705 Supports multiple PHP versions\r\n\u2705 Git integration for automatic deployment\r\n\u2705 Cloudflare Tunnel support for secure remote access\r\n\u2705 Optional WordPress setup\r\n\u2705 HTTPS configuration support\r\n\u2705 Automatic updates for Git repositories",
     "features": null,
