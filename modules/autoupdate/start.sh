@@ -33,7 +33,7 @@ check_staged_update() {
   local staging_dir="${CONTAINER_ROOT}/.autoupdate_staged"
   
   if [[ -d "$staging_dir/autoupdate" ]]; then
-    echo -e "${YELLOW}[AutoUpdate] 🔄 Staged self-update detected${NC}"
+    echo -e "${YELLOW}[AutoUpdate] 🔄  Staged self-update detected${NC}"
     echo -e "${CYAN}[AutoUpdate] Applying staged auto-update module...${NC}"
     
     # Backup current autoupdate module
@@ -158,22 +158,69 @@ get_latest_version() {
   fi
 }
 
-# Function to compare versions
+# Function to compare versions with proper semantic versioning
 version_compare() {
   local current="$1"
   local latest="$2"
+  
+  # Convert to lowercase for case-insensitive comparison
+  current=$(echo "$current" | tr '[:upper:]' '[:lower:]')
+  latest=$(echo "$latest" | tr '[:upper:]' '[:lower:]')
   
   # Remove 'v' prefix if present
   current="${current#v}"
   latest="${latest#v}"
   
+  # Handle exact match
   if [[ "$current" == "$latest" ]]; then
     return 0  # Equal
-  elif [[ "$current" < "$latest" ]]; then
-    return 1  # Current is older
-  else
-    return 2  # Current is newer
   fi
+  
+  # Split versions into arrays (major.minor.patch)
+  IFS='.' read -ra current_parts <<< "$current"
+  IFS='.' read -ra latest_parts <<< "$latest"
+  
+  # Pad arrays to same length (fill missing parts with 0)
+  local max_length=$(( ${#current_parts[@]} > ${#latest_parts[@]} ? ${#current_parts[@]} : ${#latest_parts[@]} ))
+  
+  # Ensure we have at least 3 parts for comparison
+  while [[ ${#current_parts[@]} -lt $max_length ]] || [[ ${#current_parts[@]} -lt 3 ]]; do
+    current_parts+=("0")
+  done
+  
+  while [[ ${#latest_parts[@]} -lt $max_length ]] || [[ ${#latest_parts[@]} -lt 3 ]]; do
+    latest_parts+=("0")
+  done
+  
+  # Compare each version component numerically
+  for i in $(seq 0 $((max_length - 1))); do
+    local current_part="${current_parts[$i]:-0}"
+    local latest_part="${latest_parts[$i]:-0}"
+    
+    # Remove leading zeros and ensure numeric comparison
+    # Handle non-numeric parts by defaulting to 0
+    if [[ "$current_part" =~ ^[0-9]+$ ]]; then
+      current_part=$((10#$current_part))
+    else
+      current_part=0
+    fi
+    
+    if [[ "$latest_part" =~ ^[0-9]+$ ]]; then
+      latest_part=$((10#$latest_part))
+    else
+      latest_part=0
+    fi
+    
+    if [[ $current_part -lt $latest_part ]]; then
+      return 1  # Current is older
+    elif [[ $current_part -gt $latest_part ]]; then
+      return 2  # Current is newer
+    fi
+    # If equal, continue to next component
+  done
+  
+  # All components are equal
+  return 0
 }
 
 # Function to safely create or update version file
@@ -359,7 +406,7 @@ apply_update() {
     # Show self-update notice if applicable
     if [[ "$self_update_required" == "true" ]]; then
       echo -e " "
-      echo -e "${BOLD_BLUE}[AutoUpdate] 🔄 IMPORTANT NOTICE:${NC}"
+      echo -e "${BOLD_BLUE}[AutoUpdate] 🔄  IMPORTANT NOTICE:${NC}"
       echo -e "${YELLOW}[AutoUpdate] The auto-update module itself has been updated${NC}"
       echo -e "${YELLOW}[AutoUpdate] Changes will take effect on next server restart${NC}"
       echo -e "${CYAN}[AutoUpdate] Staged location: /home/container/.autoupdate_staged${NC}"
