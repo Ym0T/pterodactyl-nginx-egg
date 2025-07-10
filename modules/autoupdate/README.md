@@ -18,7 +18,7 @@ This module automatically checks for and applies updates to the Pterodactyl Ngin
 | Environment Variable | Default | Description |
 |---------------------|---------|-------------|
 | `AUTOUPDATE_STATUS` | `true` | Enable (`true`/`1`) or disable (`false`/`0`) auto-update |
-| `AUTOUPDATE_FORCE` | `false` | Enable automatic downloading and applying of updates |
+| `AUTOUPDATE_FORCE` | `true` | Enable automatic downloading and applying of updates |
 
 ## Update Scope
 

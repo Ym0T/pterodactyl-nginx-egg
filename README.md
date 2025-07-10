@@ -68,7 +68,7 @@ The egg includes an intelligent auto-update system that keeps your installation 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `AUTOUPDATE_STATUS` | `1` | Enable (`1`) or disable (`0`) auto-update checks |
-| `AUTOUPDATE_FORCE` | `0` | Automatically apply updates (`1`) or just check (`0`) |
+| `AUTOUPDATE_FORCE` | `1` | Automatically apply updates (`1`) or just check (`0`) |
 
 ### Update Behavior:
 
