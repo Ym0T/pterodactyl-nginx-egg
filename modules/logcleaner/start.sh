@@ -32,12 +32,17 @@ if ! [[ "$LOGCLEANER_STATUS" =~ ^(true|1)$ ]]; then
 fi
 
 # Delete helper
-delete_file() {
+delete_path() {
+  local path="$1"
   if [[ "$DRY_RUN" == "true" ]]; then
-    echo -e "${YELLOW}[Logcleaner][DRY-RUN] Would delete: $1${NC}"
+    echo -e "${YELLOW}[Logcleaner][DRY-RUN] Would delete: $path${NC}"
   else
-    echo -e "${GREEN}[Logcleaner] Deleting: $1${NC}"
-    rm -f "$1"
+    echo -e "${GREEN}[Logcleaner] Deleting: $path${NC}"
+    if [[ -d "$path" ]]; then
+      rm -rf "$path"
+    else
+      rm -f "$path"
+    fi
   fi
 }
 
@@ -45,13 +50,13 @@ delete_file() {
 header "[Logcleaner] Starting log cleanup"
 
 # Remove temporary files
-statusMessage "[Logcleaner] Removing temporary files"
+statusMessage "[Logcleaner] Removing temporary files and directories"
 if compgen -G "$TMP_DIR/*" > /dev/null; then
-  for file in "$TMP_DIR"/*; do
-    delete_file "$file"
+  for path in "$TMP_DIR"/*; do
+    delete_path "$path"
   done
 else
-  echo -e "${MAGENTA}[Logcleaner] No temporary files to remove.${NC}"
+  echo -e "${MAGENTA}[Logcleaner] No temporary files or directories to remove.${NC}"
 fi
 
 # Clean large logs
@@ -59,7 +64,7 @@ statusMessage "[Logcleaner] Cleaning logs larger than ${MAX_SIZE_MB}MB"
 mapfile -t large_logs < <(find "$LOG_DIR" -type f -name '*.log' -size +${MAX_SIZE_MB}M)
 if (( ${#large_logs[@]} )); then
   for file in "${large_logs[@]}"; do
-    delete_file "$file"
+    delete_path "$file"
   done
 else
   echo -e "${MAGENTA}[Logcleaner] No logs exceed ${MAX_SIZE_MB}MB.${NC}"
@@ -70,7 +75,7 @@ statusMessage "[Logcleaner] Cleaning logs older than ${MAX_AGE_DAYS} days"
 mapfile -t old_logs < <(find "$LOG_DIR" -type f -name '*.log' -mtime +${MAX_AGE_DAYS})
 if (( ${#old_logs[@]} )); then
   for file in "${old_logs[@]}"; do
-    delete_file "$file"
+    delete_path "$file"
   done
 else
   echo -e "${MAGENTA}[Logcleaner] No logs older than ${MAX_AGE_DAYS} days.${NC}"
