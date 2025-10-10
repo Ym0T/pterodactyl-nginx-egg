@@ -36,6 +36,9 @@ if [ -z "${GIT_ADDRESS}" ]; then
     echo "[Git] Info: GIT_ADDRESS is not set."
     echo "[Git] Git operations are disabled. Skipping Git actions."
 else
+    # Optional: desired branch; empty means remote's default branch
+    GIT_BRANCH="${GIT_BRANCH:-}"
+
     # Add .git suffix to GIT_ADDRESS if it's not present
     if [[ ${GIT_ADDRESS} != *.git ]]; then
         GIT_ADDRESS="${GIT_ADDRESS}.git"
@@ -50,10 +53,10 @@ else
         GIT_DOMAIN=$(echo "${GIT_ADDRESS}" | cut -d/ -f3)
         GIT_REPO=$(echo "${GIT_ADDRESS}" | cut -d/ -f4-) # Rest of the URL after the domain
         
-        # Construct the authenticated Git URL
+        # Construct the authenticated Git URL (avoid echoing secrets)
         GIT_ADDRESS="https://${USERNAME}:${ACCESS_TOKEN}@${GIT_DOMAIN}/${GIT_REPO}"
         
-        echo "[Git] Updated GIT_ADDRESS for authenticated access: ${GIT_ADDRESS}"
+        echo "[Git] Authenticated URL configured."
     else
         echo "[Git] Using anonymous Git access."
     fi
@@ -90,16 +93,40 @@ else
 
         # Check if origin matches the provided GIT_ADDRESS
         if [ "${ORIGIN}" == "${GIT_ADDRESS}" ]; then
-            echo "[Git] Repository origin matches. Pulling latest changes from ${GIT_ADDRESS} in 'www'."
-            git pull || { echo "[Git] Error: git pull failed for 'www'."; exit 12; }
+            # Branch-aware update:
+            # - If GIT_BRANCH is set: fetch that branch, ensure it's checked out, then pull only that branch
+            # - Else: fetch/prune and pull the current tracking branch
+            if [ -n "${GIT_BRANCH}" ]; then
+                echo "[Git] Updating specific branch '${GIT_BRANCH}'."
+                git fetch --prune origin "${GIT_BRANCH}" || { echo "[Git] Error: git fetch failed for branch '${GIT_BRANCH}'."; exit 12; }
+                if git show-ref --verify --quiet "refs/heads/${GIT_BRANCH}"; then
+                    git checkout "${GIT_BRANCH}" || { echo "[Git] Error: git checkout '${GIT_BRANCH}' failed."; exit 12; }
+                else
+                    git checkout -b "${GIT_BRANCH}" "origin/${GIT_BRANCH}" || { echo "[Git] Error: creating local branch '${GIT_BRANCH}' failed."; exit 12; }
+                fi
+                git pull --ff-only origin "${GIT_BRANCH}" || { echo "[Git] Error: git pull failed for branch '${GIT_BRANCH}'."; exit 12; }
+            else
+                echo "[Git] Updating current tracking branch."
+                git fetch --prune origin || { echo "[Git] Error: git fetch failed."; exit 12; }
+                git pull --ff-only || { echo "[Git] Error: git pull failed for 'www'."; exit 12; }
+            fi
         else
             echo "[Git] Error: Repository origin does not match the provided GIT_ADDRESS in 'www'."
             exit 13
         fi
     else
         # The directory is empty, clone the repository
-        echo "[Git] /mnt/server/www directory is empty. Cloning ${GIT_ADDRESS} into /mnt/server/www."
-        git clone ${GIT_ADDRESS} . > /dev/null 2>&1 && echo "[Git] Repository cloned successfully." || { echo "[Git] Error: git clone failed for 'www'."; exit 14; }
+        echo "[Git] /mnt/server/www directory is empty. Cloning into /mnt/server/www."
+        if [ -n "${GIT_BRANCH}" ]; then
+            # Clone only the specified branch for efficiency
+            git clone --branch "${GIT_BRANCH}" --single-branch ${GIT_ADDRESS} . > /dev/null 2>&1 \
+              && echo "[Git] Repository cloned successfully (branch '${GIT_BRANCH}')." \
+              || { echo "[Git] Error: git clone failed for 'www' (branch '${GIT_BRANCH}')."; exit 14; }
+        else
+            git clone ${GIT_ADDRESS} . > /dev/null 2>&1 \
+              && echo "[Git] Repository cloned successfully." \
+              || { echo "[Git] Error: git clone failed for 'www'."; exit 14; }
+        fi
     fi
 fi
 
