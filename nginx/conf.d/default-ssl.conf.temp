@@ -1,0 +1,55 @@
+
+server {
+   listen <port> ssl http2; # SSL Configuration - Replace the example <port> with your web port
+    server_name <domain>; # SSL Configuration - Replace the example <domain> with your domain
+
+    root /home/container/www;
+    index index.html index.htm index.php;
+    charset utf-8;
+
+    access_log /home/container/logs/naccess.log;
+    error_log  /home/container/logs/nerror.log error;
+    
+    client_max_body_size 100m;
+    client_body_timeout 120s;
+    sendfile off;
+    
+     # SSL Configuration - Replace the example <domain> with your domain
+    ssl_certificate /home/container/letsencrypt/config/live/<domain>/fullchain.pem;
+    ssl_certificate_key /home/container/letsencrypt/config/live/<domain>/privkey.pem;
+    ssl_session_cache shared:SSL:10m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-	POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
+    ssl_prefer_server_ciphers on;
+    
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+    
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass unix:/home/container/tmp/php-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param PHP_VALUE "upload_max_filesize = 100M \n post_max_size=100M";
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_intercept_errors off;
+        fastcgi_buffer_size 16k;
+        fastcgi_buffers 4 16k;
+        fastcgi_connect_timeout 300;
+        fastcgi_send_timeout 300;
+        fastcgi_read_timeout 300;
+    }
+
+    location ~ /\.git {
+        deny all;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
