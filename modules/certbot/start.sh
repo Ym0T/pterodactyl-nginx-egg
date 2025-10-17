@@ -50,7 +50,6 @@ if [[ -z "$CERTBOT_DOMAIN" ]]; then
 fi
 
 # Create log directory if it doesn't exist
-mkdir -p "$(dirname "$CERTBOT_LOG_FILE")"
 mkdir -p "$CERTBOT_LOGS_DIR"
 mkdir -p "$CERTBOT_CONFIG_DIR"
 mkdir -p "$CERTBOT_WORK_DIR"

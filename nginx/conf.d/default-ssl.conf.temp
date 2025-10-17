@@ -1,4 +1,3 @@
-
 server {
    listen <port> ssl http2; # SSL Configuration - Replace the example <port> with your web port
     server_name <domain>; # SSL Configuration - Replace the example <domain> with your domain
