@@ -190,6 +190,66 @@
             "user_editable": true,
             "rules": "required|string",
             "field_type": "text"
+        },
+        {
+            "name": "Enable Certbot SSL",
+            "description": "Enable automatic SSL certificate management with Let's Encrypt Certbot\r\n\r\n0 = false (default)\r\n1 = true",
+            "env_variable": "CERTBOT_STATUS",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Certbot Email",
+            "description": "Email address for Let's Encrypt certificate notifications and recovery",
+            "env_variable": "CERTBOT_EMAIL",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|email",
+            "field_type": "text"
+        },
+        {
+            "name": "Certbot Domain",
+            "description": "Primary domain name for SSL certificate (e.g., example.com or subdomain.example.com)",
+            "env_variable": "CERTBOT_DOMAIN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|regex:\/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(?:\\.[a-zA-Z]{2,})+$\/",
+            "field_type": "text"
+        },
+        {
+            "name": "Certbot Webroot Path",
+            "description": "Document root path for webroot validation mode (only used when Mode = webroot)",
+            "env_variable": "CERTBOT_WEBROOT_PATH",
+            "default_value": "\/home\/container\/www",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Certbot Staging Mode",
+            "description": "Use Let's Encrypt staging server for testing (does not count against rate limits)\r\n\r\n0 = Production (default)\r\n1 = Staging\/Testing",
+            "env_variable": "CERTBOT_STAGING",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Certbot Force Renewal",
+            "description": "Force certificate renewal even if currently valid (useful for testing)\r\n\r\n0 = Only renew when needed (default)\r\n1 = Always force renewal",
+            "env_variable": "CERTBOT_FORCE_RENEWAL",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
         }
     ]
 }
