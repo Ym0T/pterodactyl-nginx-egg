@@ -165,7 +165,7 @@ With **Certbot DNS-01 Challenge**, you can create SSL certificates for your doma
   - Name: `www` → Type: `A` → Value: Your server IP
 
 - 🔹 **Step 12: Access your site via HTTPS**  
-  Visit `https://yourdomain.com` in your browser! 🎉
+  Visit `https://<domain>:<port>` in your browser! 🎉
 
 ---
 
