@@ -12,8 +12,10 @@ RUN apt-get update && apt-get install -y \
         lsb-release \
         ca-certificates \
         wget \
+        curl \
         nginx \
         unzip \
+        certbot \
     && ARCH=$(uname -m) \
     && if [ "$ARCH" = "x86_64" ]; then \
         wget -O /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb; \

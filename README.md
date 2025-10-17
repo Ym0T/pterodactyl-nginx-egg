@@ -8,6 +8,7 @@ A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, 
 - [Features](#features)
 - [Installation](#installation)
 - [Auto-Update System](#auto-update-system)
+- [SSL Certificate with Certbot](#ssl-certificate-setup-tutorial)
 - [Composer Modules Usage](#composer-modules-usage)
 - [ionCube Loader Support](#ioncube-loader-support)
 - [Cloudflared Tunnel Tutorial 🚀](#-cloudflared-tunnel-tutorial)
@@ -42,7 +43,7 @@ A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, 
 
 ## Installation
 
-1. Download the egg file (`egg-nginx-v2.json`)  
+1. Download the egg file (`egg-nginx-v3.json`)  
 2. In your Pterodactyl panel, navigate to **Nests** in the sidebar  
 3. Import the egg under **Import Egg**  
 4. Create a new server and select the **Nginx** egg  
@@ -112,6 +113,68 @@ The egg includes an intelligent auto-update system that keeps your installation 
 - ✅ **Documentation** (README.md, LICENSE)
 - ❌ **User content** (www/ directory)
 - ❌ **User data** (logs, uploads, databases)
+
+<br>
+
+## SSL Certificate Setup Tutorial  
+
+With **Certbot DNS-01 Challenge**, you can create SSL certificates for your domain **without** needing port 80 or 443 open!  
+[Let's Encrypt | Getting Started](https://letsencrypt.org/getting-started/)
+
+### 📌 Requirements  
+- A [DNS provider](https://www.cloudflare.com/) account with access to create TXT records  
+- Your domain name
+
+---
+
+- 🔹 **Step 1: Enable Certbot in Pterodactyl Startup settings**  
+  Set `CERTBOT_STATUS=true`
+
+- 🔹 **Step 2: Configure your email address**  
+  Set `CERTBOT_EMAIL=your@email.com`
+
+- 🔹 **Step 3: Set your domain name**  
+  Set `CERTBOT_DOMAIN=yourdomain.com`
+
+- 🔹 **Step 4: Restart your server and watch console output**  
+  Certbot will display a DNS TXT record
+
+- 🔹 **Step 5: Create the DNS TXT record at your DNS provider**  
+  - Name: `_acme-challenge.yourdomain.com`
+  - Type: `TXT`
+  - Value: Copy from Certbot output
+  - Wait 2-5 minutes for DNS propagation
+
+- 🔹 **Step 6: Verify DNS with online tool**  
+  Check: https://toolbox.googleapps.com/apps/dig/#TXT/_acme-challenge.yourdomain.com
+
+- 🔹 **Step 7: Continue in Pterodactyl console**  
+  Type SPACE + ENTER twice in the command line
+
+- 🔹 **Step 8: Copy SSL configuration template**  
+  Copy `/nginx/conf.d/default-ssl.conf.temp` content into `default.conf`
+
+- 🔹 **Step 9: Replace placeholders in default.conf**  
+  Replace `<port>` with your port (e.g., `25783`)  
+  Replace `<domain>` with your domain (e.g., `yourdomain.com`)
+
+- 🔹 **Step 10: Restart Nginx server**
+
+- 🔹 **Step 11: Create DNS A records at your DNS provider**  
+  - Name: `@` → Type: `A` → Value: Your server IP
+  - Name: `www` → Type: `A` → Value: Your server IP
+
+- 🔹 **Step 12: Access your site via HTTPS**  
+  Visit `https://yourdomain.com` in your browser! 🎉
+
+---
+
+### 📝 Important Notes
+- Staging certificates are for testing only (not trusted by browsers)
+- For production: Set `CERTBOT_STAGING=false` and `CERTBOT_FORCE_RENEWAL=true`
+- Certificates expire after 90 days - manual renewal required
+- Certificate files location: `/home/container/letsencrypt/config/live/yourdomain.com/`
+
 
 <br>
 
@@ -298,5 +361,7 @@ Core, date, libxml, openssl, pcre, zlib, filter, hash, json, random, Reflection,
 ## License
 
 [MIT License](https://choosealicense.com/licenses/mit/)
+
+
 
 Forked and adapted from: https://gitlab.com/tenten8401/pterodactyl-nginx
