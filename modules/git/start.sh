@@ -36,8 +36,41 @@ if [[ ! -d "$GIT_DIR/.git" ]]; then
   exit 0
 fi
 
-# Perform pull
+# Change to git directory
 cd "$GIT_DIR"
+
+# Update remote URL with credentials if USERNAME and ACCESS_TOKEN are provided
+if [[ -n "${USERNAME:-}" ]] && [[ -n "${ACCESS_TOKEN:-}" ]]; then
+  echo -e "${WHITE}[Git] Updating remote URL with provided credentials…${NC}"
+
+  # Get current remote URL
+  CURRENT_URL=$(git config --get remote.origin.url)
+
+  if [[ -n "$CURRENT_URL" ]]; then
+    # Extract domain and repo path from current URL
+    # Remove any existing credentials from URL
+    CLEAN_URL=$(echo "$CURRENT_URL" | sed -E 's|https://[^@]*@|https://|')
+
+    # Extract domain (github.com, gitlab.com, etc.)
+    GIT_DOMAIN=$(echo "$CLEAN_URL" | sed -E 's|https://([^/]+)/.*|\1|')
+
+    # Extract repo path (user/repo.git)
+    GIT_REPO=$(echo "$CLEAN_URL" | sed -E 's|https://[^/]+/(.*)|\1|')
+
+    # Construct new URL with credentials
+    NEW_URL="https://${USERNAME}:${ACCESS_TOKEN}@${GIT_DOMAIN}/${GIT_REPO}"
+
+    # Update remote URL
+    git remote set-url origin "$NEW_URL"
+    echo -e "${GREEN}[Git] Remote URL updated with credentials.${NC}"
+  else
+    echo -e "${YELLOW}[Git] No remote URL found; skipping credential update.${NC}"
+  fi
+else
+  echo -e "${WHITE}[Git] No credentials provided; using existing configuration.${NC}"
+fi
+
+# Perform pull
 echo -e "${WHITE}[Git] Pulling latest changes…${NC}"
 if git pull; then
   echo -e "${GREEN}[Git] Repository updated successfully.${NC}"
