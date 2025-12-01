@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
         nginx \
         unzip \
         certbot \
-        python3-certbot-nginx \
     && ARCH=$(uname -m) \
     && if [ "$ARCH" = "x86_64" ]; then \
         wget -O /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb; \
@@ -138,5 +137,6 @@ STOPSIGNAL SIGINT
 # Copy entrypoint script
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
 
 CMD ["/entrypoint.sh"]
