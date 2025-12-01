@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
         nginx \
         unzip \
         certbot \
+        python3-certbot-nginx \
     && ARCH=$(uname -m) \
     && if [ "$ARCH" = "x86_64" ]; then \
         wget -O /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb; \
@@ -57,7 +58,6 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-intl \
         php${PHP_VERSION}-ldap \
         php${PHP_VERSION}-exif \
-        php${PHP_VERSION}-memcache \
         php${PHP_VERSION}-mongodb \
         php${PHP_VERSION}-msgpack \
         php${PHP_VERSION}-mysqli \
@@ -83,12 +83,14 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-xsl \
         php${PHP_VERSION}-zip \
         php${PHP_VERSION}-mailparse \
-        php${PHP_VERSION}-memcached \
         php${PHP_VERSION}-inotify \
         php${PHP_VERSION}-maxminddb \
         php${PHP_VERSION}-protobuf \
-        php${PHP_VERSION}-opcache \
         php${PHP_VERSION}-dev \
+    # Optional packages (may not be available for all PHP versions)
+    && apt-get install -y --no-install-recommends php${PHP_VERSION}-memcache || true \
+    && apt-get install -y --no-install-recommends php${PHP_VERSION}-memcached || true \
+    && apt-get install -y --no-install-recommends php${PHP_VERSION}-opcache || true \
     && wget -q -O /tmp/composer.phar https://getcomposer.org/download/latest-stable/composer.phar \
     && SHA256=$(wget -q -O - https://getcomposer.org/download/latest-stable/composer.phar.sha256) \
     && echo "$SHA256 /tmp/composer.phar" | sha256sum -c - \
@@ -96,23 +98,32 @@ RUN apt-get update && apt-get install -y \
     && chmod +x /usr/local/bin/composer \
     && rm -rf /var/lib/apt/lists/*
 
-RUN set -eux; \
-    ARCH=$(uname -m); \
-    PHP_EXT_DIR=$(php -r "echo ini_get('extension_dir');"); \
-    PHP_MAJOR_VERSION=$(php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;"); \
+# ionCube Loader (optional - may not be available for newest PHP versions)
+RUN ARCH=$(uname -m); \
     if [ "$ARCH" = "x86_64" ]; then \
         IONCUBE_ARCH="x86-64"; \
     elif [ "$ARCH" = "aarch64" ]; then \
         IONCUBE_ARCH="aarch64"; \
     else \
-        echo "Unsupported architecture: $ARCH" >&2; exit 1; \
+        echo "ionCube: Unsupported architecture $ARCH - skipping"; \
+        exit 0; \
     fi; \
     cd /tmp; \
-    wget -O ioncube.tar.gz "https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_${IONCUBE_ARCH}.tar.gz"; \
+    wget -q -O ioncube.tar.gz "https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_${IONCUBE_ARCH}.tar.gz" || { echo "ionCube download failed - skipping"; exit 0; }; \
     tar xzf ioncube.tar.gz; \
-    cp ioncube/ioncube_loader_lin_${PHP_MAJOR_VERSION}.so "$PHP_EXT_DIR"; \
-    echo "zend_extension=${PHP_EXT_DIR}/ioncube_loader_lin_${PHP_MAJOR_VERSION}.so" > /etc/php/${PHP_VERSION}/cli/conf.d/00-ioncube.ini; \
-    echo "zend_extension=${PHP_EXT_DIR}/ioncube_loader_lin_${PHP_MAJOR_VERSION}.so" > /etc/php/${PHP_VERSION}/fpm/conf.d/00-ioncube.ini; \
+    if [ -f "ioncube/ioncube_loader_lin_${PHP_VERSION}.so" ]; then \
+        PHP_EXT_DIR=$(find /usr/lib/php -maxdepth 1 -type d -name "20*" | head -1); \
+        if [ -n "$PHP_EXT_DIR" ]; then \
+            cp "ioncube/ioncube_loader_lin_${PHP_VERSION}.so" "$PHP_EXT_DIR/"; \
+            echo "zend_extension=${PHP_EXT_DIR}/ioncube_loader_lin_${PHP_VERSION}.so" > /etc/php/${PHP_VERSION}/cli/conf.d/00-ioncube.ini; \
+            echo "zend_extension=${PHP_EXT_DIR}/ioncube_loader_lin_${PHP_VERSION}.so" > /etc/php/${PHP_VERSION}/fpm/conf.d/00-ioncube.ini; \
+            echo "ionCube Loader installed for PHP ${PHP_VERSION}"; \
+        else \
+            echo "PHP extension directory not found - skipping ionCube"; \
+        fi; \
+    else \
+        echo "ionCube Loader not available for PHP ${PHP_VERSION} - skipping"; \
+    fi; \
     rm -rf /tmp/ioncube*
 
 # Create user and set environment variables
