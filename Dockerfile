@@ -28,7 +28,28 @@ RUN apt-get update && apt-get install -y \
     && rm /tmp/cloudflared.deb \
     && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
     && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list \
-    && apt-get update \
+    # Retry apt-get update with exponential backoff for Sury repository
+    && { \
+        success=0; \
+        for i in 1 2 3 4 5; do \
+            if apt-get update; then \
+                success=1; \
+                break; \
+            else \
+                echo "apt-get update failed (attempt $i/5), retrying in $((i * 10)) seconds..."; \
+                sleep $((i * 10)); \
+            fi; \
+        done; \
+        if [ "$success" -ne 1 ]; then \
+            echo "ERROR: apt-get update failed after 5 attempts. Sury repository may be unavailable."; \
+            exit 1; \
+        fi; \
+    } \
+    # Verify Sury repository is accessible
+    && apt-cache show php${PHP_VERSION}-fpm >/dev/null 2>&1 || { \
+        echo "ERROR: php${PHP_VERSION}-fpm package not found. Sury repository may be unavailable."; \
+        exit 1; \
+    } \
     && apt-get install -y --no-install-recommends \
         php${PHP_VERSION} \
         php${PHP_VERSION}-fpm \
@@ -90,6 +111,13 @@ RUN apt-get update && apt-get install -y \
     && apt-get install -y --no-install-recommends php${PHP_VERSION}-memcache || true \
     && apt-get install -y --no-install-recommends php${PHP_VERSION}-memcached || true \
     && apt-get install -y --no-install-recommends php${PHP_VERSION}-opcache || true \
+    # Final verification: ensure PHP-FPM was installed correctly
+    && command -v php-fpm${PHP_VERSION} >/dev/null 2>&1 || { \
+        echo "ERROR: php-fpm${PHP_VERSION} binary not found after installation!"; \
+        echo "This indicates the PHP installation failed. Aborting build."; \
+        exit 1; \
+    } \
+    && echo "PHP ${PHP_VERSION} installed successfully: $(php${PHP_VERSION} -v | head -1)" \
     && wget -q -O /tmp/composer.phar https://getcomposer.org/download/latest-stable/composer.phar \
     && SHA256=$(wget -q -O - https://getcomposer.org/download/latest-stable/composer.phar.sha256) \
     && echo "$SHA256 /tmp/composer.phar" | sha256sum -c - \
