@@ -7,9 +7,20 @@ log_message() {
   echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" >> "$CRON_LOG_FILE"
 }
 
+# Validate command doesn't contain dangerous patterns
+validate_command() {
+  local cmd="$1"
+  # Block commands that could escape the container context
+  if [[ "$cmd" =~ (^|[[:space:]])(rm[[:space:]]+-rf[[:space:]]+/[[:space:]]*$|dd[[:space:]]+if=|mkfs\.|:\(\)\{) ]]; then
+    log_message "BLOCKED dangerous command pattern: $cmd"
+    return 1
+  fi
+  return 0
+}
+
 execute_if_match() {
   local minute="$1" hour="$2" day="$3" month="$4" weekday="$5" command="$6"
-  
+
   # Get current time (portable version)
   local curr_min curr_hour curr_day curr_month curr_weekday
   curr_min=$(date '+%M' | sed 's/^0*//')
@@ -17,23 +28,28 @@ execute_if_match() {
   curr_day=$(date '+%d' | sed 's/^0*//')
   curr_month=$(date '+%m' | sed 's/^0*//')
   curr_weekday=$(date '+%w')
-  
+
   # Fix empty values (when sed removes all chars)
   [[ -z "$curr_min" ]] && curr_min=0
   [[ -z "$curr_hour" ]] && curr_hour=0
   [[ -z "$curr_day" ]] && curr_day=0
   [[ -z "$curr_month" ]] && curr_month=0
-  
+
   # Check if current time matches cron pattern
   [[ "$minute" != "*" && "$minute" != "$curr_min" ]] && return
   [[ "$hour" != "*" && "$hour" != "$curr_hour" ]] && return
   [[ "$day" != "*" && "$day" != "$curr_day" ]] && return
   [[ "$month" != "*" && "$month" != "$curr_month" ]] && return
   [[ "$weekday" != "*" && "$weekday" != "$curr_weekday" ]] && return
-  
-  # Execute command
+
+  # Validate command before execution
+  if ! validate_command "$command"; then
+    return 1
+  fi
+
+  # Execute command using bash -c for controlled execution
   log_message "Executing: $command"
-  eval "$command" >> "$CRON_LOG_FILE" 2>&1
+  /bin/bash -c "$command" >> "$CRON_LOG_FILE" 2>&1
 }
 
 # Main cron loop
