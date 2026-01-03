@@ -153,6 +153,19 @@ RUN ARCH=$(uname -m); \
     fi; \
     rm -rf /tmp/ioncube*
 
+# ImageMagick security policy to allow PDF operations
+RUN POLICY_FILE=$(find /etc -name "policy.xml" -path "*/ImageMagick*" 2>/dev/null | head -1); \
+    if [ -n "$POLICY_FILE" ]; then \
+        echo "Updating ImageMagick policy: $POLICY_FILE"; \
+        sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/g' "$POLICY_FILE"; \
+        sed -i 's/<policy domain="coder" rights="none" pattern="PS" \/>/<policy domain="coder" rights="read|write" pattern="PS" \/>/g' "$POLICY_FILE"; \
+        sed -i 's/<policy domain="coder" rights="none" pattern="EPS" \/>/<policy domain="coder" rights="read|write" pattern="EPS" \/>/g' "$POLICY_FILE"; \
+        sed -i 's/<policy domain="coder" rights="none" pattern="XPS" \/>/<policy domain="coder" rights="read|write" pattern="XPS" \/>/g' "$POLICY_FILE"; \
+        echo "ImageMagick PDF/PS policy updated successfully"; \
+    else \
+        echo "ImageMagick policy.xml not found - skipping"; \
+    fi
+
 # Create user and set environment variables
 RUN useradd -m -d /home/container/ -s /bin/bash container \
     && echo "USER=container" >> /etc/environment \
