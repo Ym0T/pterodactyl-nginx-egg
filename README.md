@@ -36,7 +36,7 @@ A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, 
   - ✅ 8.4  
   - ✅ 8.3  
   - ☑️ 8.2 (security-only)  
-  - ☑️ 8.1 (security-only)  
+  - ❌ 8.1 (EOL)  
 
 [PHP Supported Versions](https://www.php.net/supported-versions.php)
 
