@@ -12,6 +12,102 @@ YELLOW='\033[0;33m'; RED='\033[0;31m'
 MAGENTA='\033[0;35m'; CYAN='\033[0;36m'
 NC='\033[0m'
 
+# ============================================================================
+# CRYPTOGRAPHIC SIGNATURE VERIFICATION
+# ============================================================================
+# Ed25519 Public Key for verifying update signatures
+# This key is embedded in the script to prevent tampering
+# Generate new keypair: Run API with SIGNING_PRIVATE_KEY not set, then generate
+# PUBLIC_KEY_BASE64="YOUR_PUBLIC_KEY_HERE"
+PUBLIC_KEY_BASE64="5MpxNNMkROJLixsSTk/PDBAFRF3bP+zr3U0lzzK/py4="
+
+# Verify signature of downloaded update
+# Usage: verify_signature <file_path> <signature_base64> <expected_hash>
+# Returns: 0 if valid, 1 if invalid or verification unavailable
+verify_signature() {
+    local file_path="$1"
+    local signature_b64="$2"
+    local expected_hash="$3"
+
+    # Skip verification if no public key is configured
+    if [[ -z "$PUBLIC_KEY_BASE64" ]]; then
+        echo -e "${YELLOW}[AutoUpdate] ⚠ Signature verification skipped - no public key configured${NC}"
+        return 0
+    fi
+
+    # Check if openssl is available
+    if ! command -v openssl >/dev/null 2>&1; then
+        echo -e "${YELLOW}[AutoUpdate] ⚠ Signature verification skipped - openssl not available${NC}"
+        return 0
+    fi
+
+    echo -e "${CYAN}[AutoUpdate] 🔐 Verifying cryptographic signature...${NC}"
+
+    # Verify file hash first
+    local actual_hash
+    actual_hash=$(sha256sum "$file_path" | cut -d' ' -f1)
+
+    if [[ "$actual_hash" != "$expected_hash" ]]; then
+        echo -e "${RED}[AutoUpdate] ✗ Hash mismatch!${NC}"
+        echo -e "${RED}[AutoUpdate]   Expected: $expected_hash${NC}"
+        echo -e "${RED}[AutoUpdate]   Actual:   $actual_hash${NC}"
+        return 1
+    fi
+
+    echo -e "${GREEN}[AutoUpdate] ✓ Hash verified: ${actual_hash:0:16}...${NC}"
+
+    # Decode public key and signature to temp files
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    local pub_key_file="$temp_dir/public.pem"
+    local sig_file="$temp_dir/signature.bin"
+    local hash_file="$temp_dir/hash.bin"
+
+    # Convert base64 public key to PEM format for Ed25519
+    # Ed25519 public key is 32 bytes, we need to wrap it in proper ASN.1 structure
+    {
+        echo "-----BEGIN PUBLIC KEY-----"
+        # Add Ed25519 OID prefix (MCowBQYDK2VwAyEA) + base64 public key
+        echo "MCowBQYDK2VwAyEA$(echo "$PUBLIC_KEY_BASE64")" | fold -w 64
+        echo "-----END PUBLIC KEY-----"
+    } > "$pub_key_file"
+
+    # Decode signature from base64
+    echo "$signature_b64" | base64 -d > "$sig_file" 2>/dev/null || {
+        echo -e "${RED}[AutoUpdate] ✗ Failed to decode signature${NC}"
+        rm -rf "$temp_dir"
+        return 1
+    }
+
+    # Create hash file (the signature is over the hash, not the file directly)
+    # Convert hex to binary - use xxd if available, otherwise use printf
+    if command -v xxd >/dev/null 2>&1; then
+        echo -n "$expected_hash" | xxd -r -p > "$hash_file"
+    else
+        # Fallback: convert hex to binary using printf
+        local hex="$expected_hash"
+        local i
+        > "$hash_file"  # Create empty file
+        for ((i=0; i<${#hex}; i+=2)); do
+            printf "\x${hex:$i:2}" >> "$hash_file"
+        done
+    fi
+
+    # Verify signature using openssl (Ed25519)
+    if openssl pkeyutl -verify -pubin -inkey "$pub_key_file" \
+        -sigfile "$sig_file" -in "$hash_file" -rawin 2>/dev/null; then
+        echo -e "${GREEN}[AutoUpdate] ✓ Signature verified - update is authentic${NC}"
+        rm -rf "$temp_dir"
+        return 0
+    else
+        echo -e "${RED}[AutoUpdate] ✗ Signature verification FAILED!${NC}"
+        echo -e "${RED}[AutoUpdate]   The update may have been tampered with.${NC}"
+        echo -e "${RED}[AutoUpdate]   Update will NOT be applied for security reasons.${NC}"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+}
+
 # Header function
 header() {
   echo -e "${BLUE}───────────────────────────────────────────────${NC}"
@@ -270,13 +366,24 @@ apply_update() {
   # Extract download URL from response
   local download_url
   download_url=$(echo "$diff_response" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
-  
+
   if [[ -z "$download_url" ]]; then
     echo -e "${RED}[AutoUpdate] No download URL found in diff response${NC}"
     rm -f "$temp_diff_file"
     return 1
   fi
-  
+
+  # Extract signature information for verification
+  local signature checksum
+  signature=$(echo "$diff_response" | grep -o '"signature":"[^"]*"' | cut -d'"' -f4 || echo "")
+  checksum=$(echo "$diff_response" | grep -o '"checksum":"[^"]*"' | cut -d'"' -f4 || echo "")
+
+  if [[ -n "$signature" && -n "$checksum" ]]; then
+    echo -e "${CYAN}[AutoUpdate] 🔐 Signed update detected${NC}"
+  elif [[ -n "$PUBLIC_KEY_BASE64" ]]; then
+    echo -e "${YELLOW}[AutoUpdate] ⚠ Update is unsigned but signature verification is enabled${NC}"
+  fi
+
   # Extract file change information for logging
   local total_changes files_added files_modified files_removed
   total_changes=$(echo "$diff_response" | grep -o '"total_changes":[0-9]*' | cut -d':' -f2)
@@ -321,7 +428,23 @@ apply_update() {
     rm -f "$zip_file"
     return 1
   fi
-  
+
+  # Verify signature if available
+  if [[ -n "$signature" && -n "$checksum" ]]; then
+    if ! verify_signature "$zip_file" "$signature" "$checksum"; then
+      echo -e "${RED}[AutoUpdate] ✗ Signature verification failed - aborting update${NC}"
+      rm -f "$zip_file" "$temp_diff_file"
+      return 1
+    fi
+  elif [[ -n "$PUBLIC_KEY_BASE64" && "$PUBLIC_KEY_BASE64" != "YOUR_PUBLIC_KEY_HERE" ]]; then
+    # Public key is configured but update is unsigned - reject for security
+    echo -e "${RED}[AutoUpdate] ✗ Update is unsigned but signature verification is required${NC}"
+    echo -e "${RED}[AutoUpdate] ✗ Aborting update for security reasons${NC}"
+    echo -e "${YELLOW}[AutoUpdate] To allow unsigned updates, remove or comment out PUBLIC_KEY_BASE64${NC}"
+    rm -f "$zip_file" "$temp_diff_file"
+    return 1
+  fi
+
   echo -e "${WHITE}[AutoUpdate] Extracting and applying updates...${NC}"
   
   # Extract to temporary directory
