@@ -13,8 +13,7 @@
         "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.5-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.5-latest",
         "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.4-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.4-latest",
         "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.3-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.3-latest",
-        "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.2-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.2-latest",
-        "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.1-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.1-latest"
+        "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.2-latest": "ghcr.io\/ym0t\/pterodactyl-nginx-egg:8.2-latest"
     },
     "file_denylist": [],
     "startup": ".\/start-modules.sh",
