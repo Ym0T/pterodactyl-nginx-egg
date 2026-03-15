@@ -132,6 +132,36 @@
             "field_type": "text"
         },
         {
+            "name": "Git SSH Private Key",
+            "description": "Private deploy key used for SSH access to GitHub",
+            "env_variable": "GIT_SSH_PRIVATE_KEY",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "textarea"
+        },
+        {
+            "name": "Git SSH known_hosts",
+            "description": "known_hosts entry for github.com",
+            "env_variable": "GIT_SSH_KNOWN_HOSTS",
+            "default_value": "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...",
+            "user_viewable": false,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "textarea"
+        },
+        {
+            "name": "Git SSH Strict Host Checking",
+            "description": "Whether to enforce host verification for SSH git access",
+            "env_variable": "GIT_SSH_STRICT_HOST_CHECKING",
+            "default_value": "yes",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:yes,no",
+            "field_type": "text"
+        },
+        {
             "name": "Enable Cloudflare Tunnel",
             "description": "Set to true to start the Cloudflared tunnel on container startup, or false to skip it.",
             "env_variable": "CLOUDFLARED_STATUS",
