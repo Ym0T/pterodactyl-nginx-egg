@@ -61,6 +61,7 @@ if [[ "$CURRENT_URL" =~ ^git@|^ssh:// ]]; then
     exit 1
   fi
 
+
   echo "${GIT_SSH_PRIVATE_KEY}" | tr -d '\r' > /home/container/.ssh/id_ed25519
   chmod 600 /home/container/.ssh/id_ed25519
 
