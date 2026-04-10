@@ -59,4 +59,4 @@ echo -e "\033[1;36mSee the LICENSE file for details.\033[0m"
 echo -e "\033[0;34m───────────────────────────────────────────────\033[0m"
 
 # Start NGINX
-nginx -c "$NGINX_CONF" -p "$NGINX_PREFIX"
+nginx -c "$NGINX_CONF" -p "$NGINX_PREFIX" -e /dev/stderr
