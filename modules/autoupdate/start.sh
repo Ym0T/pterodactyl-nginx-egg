@@ -330,6 +330,65 @@ update_version_file() {
   fi
 }
 
+# ============================================================================
+# PRE-UPDATE BACKUP
+# ============================================================================
+# Creates a timestamped backup of every file that is about to be overwritten.
+# Only files that already exist on disk AND appear in the update package are
+# backed up – so the snapshot reflects exactly what will change.
+#
+# Backup location:
+#   /home/container/.autoupdate_prebackup_<fromVer>_to_<toVer>_<timestamp>/
+#
+# A human-readable .backup_info file is written into the backup root so you
+# can always tell at a glance what the backup contains and when it was made.
+# ============================================================================
+create_pre_update_backup() {
+  local extract_dir="$1"
+  local from_version="$2"
+  local to_version="$3"
+
+  local timestamp
+  timestamp=$(date +%Y%m%d_%H%M%S)
+  local backup_dir="${CONTAINER_ROOT}/.autoupdate_prebackup_${from_version}_to_${to_version}_${timestamp}"
+  mkdir -p "$backup_dir"
+
+  echo -e "${CYAN}[AutoUpdate] 💾 Creating pre-update backup...${NC}"
+  local backed_up=0
+
+  # Walk every file present in the extracted update package
+  while IFS= read -r -d '' extracted_file; do
+    local rel_path="${extracted_file#${extract_dir}/}"
+    local live_file="${CONTAINER_ROOT}/${rel_path}"
+
+    # Only back up files that actually exist on disk right now
+    if [[ -f "$live_file" ]]; then
+      local target_dir
+      target_dir=$(dirname "${backup_dir}/${rel_path}")
+      mkdir -p "$target_dir"
+      cp "$live_file" "${backup_dir}/${rel_path}"
+      backed_up=$((backed_up + 1))
+    fi
+  done < <(find "$extract_dir" -type f -print0)
+
+  if [[ $backed_up -gt 0 ]]; then
+    # Write human-readable info file
+    {
+      echo "Pre-update backup"
+      echo "From version : $from_version"
+      echo "To version   : $to_version"
+      echo "Created at   : $(date)"
+      echo "Files backed up: $backed_up"
+    } > "${backup_dir}/.backup_info"
+
+    echo -e "${GREEN}[AutoUpdate] ✓ Backed up ${backed_up} file(s) → $(basename "$backup_dir")${NC}"
+    echo -e "${CYAN}[AutoUpdate] Backup location: ${backup_dir}${NC}"
+  else
+    echo -e "${YELLOW}[AutoUpdate] No existing files to back up${NC}"
+    rmdir "$backup_dir" 2>/dev/null || true
+  fi
+}
+
 # Function to download and apply diff
 apply_update() {
   local from_version="$1"
@@ -456,13 +515,31 @@ apply_update() {
     rm -f "$zip_file"
     return 1
   fi
-  
+
   # Apply updates only to allowed directories and files
   local updated_files=0
   local allowed_dirs=("modules" "nginx" "php")
   local allowed_files=("start-modules.sh" "README.md" "LICENSE")
+  # Files that must never be overwritten by updates (relative to CONTAINER_ROOT)
+  local protected_files=("nginx/conf.d/default.conf")
   local self_update_required=false
-  
+
+  # Remove protected files from the extraction directory before backup and copy.
+  # This ensures they are neither backed up (they won't change) nor overwritten.
+  echo -e "${CYAN}[AutoUpdate] Applying file protection rules...${NC}"
+  for protected in "${protected_files[@]}"; do
+    local protected_path="${extract_dir}/${protected}"
+    if [[ -f "$protected_path" ]]; then
+      rm -f "$protected_path"
+      echo -e "${YELLOW}[AutoUpdate] 🔒 Protected (skipped): ${protected}${NC}"
+    fi
+  done
+
+  # Back up every file that exists on disk and is about to be overwritten.
+  # Runs AFTER protected files are removed so the backup only covers what
+  # will actually change.
+  create_pre_update_backup "$extract_dir" "$from_version" "$to_version"
+
   # Check if autoupdate module itself needs updating
   if [[ -f "${extract_dir}/modules/autoupdate/start.sh" ]]; then
     echo -e "${YELLOW}[AutoUpdate] ⚠ Auto-update module itself has updates${NC}"
