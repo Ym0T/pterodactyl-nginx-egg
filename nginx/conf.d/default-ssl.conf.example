@@ -2,12 +2,17 @@ server {
    listen <port> ssl http2; # SSL Configuration - Replace the example <port> with your web port
     server_name <domain>; # SSL Configuration - Replace the example <domain> with your domain
 
+    # Commented out due to this overriding existing configuration already set in nginx/nginx.conf
+    # access_log /home/container/logs/naccess.log;
+    # error_log  /home/container/logs/nerror.log error;
+
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
+    real_ip_recursive on;
+    
     root /home/container/www;
     index index.html index.htm index.php;
     charset utf-8;
-
-    access_log /home/container/logs/naccess.log;
-    error_log  /home/container/logs/nerror.log error;
     
     client_max_body_size 100m;
     client_body_timeout 120s;
@@ -28,22 +33,31 @@ server {
     add_header Content-Security-Policy "frame-ancestors 'self'" always;
     add_header Referrer-Policy "same-origin" always;
 
+    absolute_redirect off;
+    port_in_redirect off;
+    
     location = /favicon.ico { access_log off; log_not_found off; }
     location = /robots.txt  { access_log off; log_not_found off; }
     
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
+
+    # allow larger file uploads and longer script runtimes
+    client_max_body_size 100m;
+    client_body_timeout 120s;
+    sendfile off;
     
     location ~ \.php$ {
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        try_files $fastcgi_script_name =404;
         fastcgi_pass unix:/home/container/tmp/php-fpm.sock;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param PHP_VALUE "upload_max_filesize = 100M \n post_max_size=100M";
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         fastcgi_param HTTP_PROXY "";
-        fastcgi_intercept_errors off;
+        fastcgi_intercept_errors on;
         fastcgi_buffer_size 16k;
         fastcgi_buffers 4 16k;
         fastcgi_connect_timeout 300;
@@ -51,11 +65,36 @@ server {
         fastcgi_read_timeout 300;
     }
 
+    # Block access to sensitive files and directories
     location ~ /\.git {
         deny all;
     }
 
     location ~ /\.ht {
+        deny all;
+    }
+
+    location ~ /\.env {
+        deny all;
+    }
+
+    location ~ /\.svn {
+        deny all;
+    }
+
+    location ~ /composer\.(json|lock)$ {
+        deny all;
+    }
+
+    location ~ /package(-lock)?\.json$ {
+        deny all;
+    }
+
+    location ~ /\.user\.ini$ {
+        deny all;
+    }
+
+    location ~ /\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist)$ {
         deny all;
     }
 }
