@@ -83,5 +83,5 @@ while true; do
   fi
   
   # Sleep until next minute
-  sleep $((60 - $(date '+%S')))
+  sleep $((60 - 10#$(date '+%S')))
 done
