@@ -73,8 +73,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=php-${{ matrix.php-version }}
+          cache-to: type=gha,scope=php-${{ matrix.php-version }},mode=max
           build-args: |
             PHP_VERSION=${{ matrix.php-version }}
 
