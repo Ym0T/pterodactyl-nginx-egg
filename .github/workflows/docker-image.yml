@@ -73,8 +73,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=php-${{ matrix.php-version }}
-          cache-to: type=gha,scope=php-${{ matrix.php-version }},mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache-${{ matrix.php-version }}
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache-${{ matrix.php-version }},mode=max,image-manifest=true,oci-mediatypes=true
           build-args: |
             PHP_VERSION=${{ matrix.php-version }}
 
