@@ -78,7 +78,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME_LC }}:buildcache-${{ matrix.php-version }}
-          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME_LC }}:buildcache-${{ matrix.php-version }},mode=max,image-manifest=true,oci-mediatypes=true
+          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref=ghcr.io/{0}:buildcache-{1},mode=max,image-manifest=true,oci-mediatypes=true', env.IMAGE_NAME_LC, matrix.php-version) || '' }}
           build-args: |
             PHP_VERSION=${{ matrix.php-version }}
 
