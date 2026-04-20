@@ -32,6 +32,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # Cache does not like upercase
+      - name: Compute lowercase image name
+        run: echo "IMAGE_NAME_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       # Install the cosign tool except on PR
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -73,8 +77,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache-${{ matrix.php-version }}
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache-${{ matrix.php-version }},mode=max,image-manifest=true,oci-mediatypes=true
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME_LC }}:buildcache-${{ matrix.php-version }}
+          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME_LC }}:buildcache-${{ matrix.php-version }},mode=max,image-manifest=true,oci-mediatypes=true
           build-args: |
             PHP_VERSION=${{ matrix.php-version }}
 
