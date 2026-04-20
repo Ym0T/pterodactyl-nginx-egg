@@ -1,0 +1,15 @@
+name: Clear All Caches
+on: workflow_dispatch
+
+jobs:
+  clear-cache:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete all caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh cache delete --all --repo ${{ github.repository }}
+          echo "All caches have been cleared."
