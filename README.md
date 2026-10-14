@@ -348,6 +348,21 @@ Core, date, libxml, openssl, pcre, zlib, filter, hash, json, random, Reflection,
 
 <br>
 
+### Disabling extensions and custom .ini files
+
+Extensions shipped with the image can be turned off, and their settings overridden, without rebuilding it:
+
+- **Disable extensions:** set `Disabled PHP Extensions` (`PHP_DISABLED_EXTENSIONS`) in the Startup tab to a space-separated list, e.g. `imagick memcache`, then restart.
+- **Custom `.ini` files:** place them in `/home/container/php/conf.d`. A file with the same name as one of the image's (e.g. `10-opcache.ini`) replaces it.
+
+The resulting configuration is written to `/home/container/php/conf.d-active` on every start, so don't edit files there.
+
+> `docker exec` sessions don't run the startup script. To use the same configuration there, run `export PHP_INI_SCAN_DIR=/home/container/php/conf.d-active` first (the directory only exists when one of the options above is in use).
+
+> Extensions that are not in the image still have to be added to it.
+
+<br>
+
 ## Notes
 
 - Public web root directory: `www`  

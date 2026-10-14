@@ -62,6 +62,16 @@
             "field_type": "text"
         },
         {
+            "name": "Disabled PHP Extensions",
+            "description": "Space-separated list of PHP extensions that should not be loaded, e.g. \"imagick\" or \"imagick memcache\". Leave empty to load everything the image ships. Custom .ini files can be placed in /home/container/php/conf.d.",
+            "env_variable": "PHP_DISABLED_EXTENSIONS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:255",
+            "field_type": "text"
+        },
+        {
             "name": "Wordpress",
             "description": "Enable or disable Wordpress \r\n\r\n0 = false (default) \r\n1 = true",
             "env_variable": "WORDPRESS",
