@@ -1,6 +1,22 @@
-# Pterodactyl Nginx Egg
+<div align="center">
 
-A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, Cronjob, ionCube Loader, Auto-Update, and Cloudflare Tunnel support.
+# 🦖 Pterodactyl Nginx Egg
+
+**A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, Cronjob, ionCube Loader, Auto-Update, and Cloudflare Tunnel support.**
+
+[![Latest Release](https://img.shields.io/github/v/release/Ym0T/pterodactyl-nginx-egg?style=for-the-badge&logo=github&color=2ea44f)](https://github.com/Ym0T/pterodactyl-nginx-egg/releases)
+[![License](https://img.shields.io/github/license/Ym0T/pterodactyl-nginx-egg?style=for-the-badge&color=blue)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/Ym0T/pterodactyl-nginx-egg?style=for-the-badge&logo=github&color=yellow)](https://github.com/Ym0T/pterodactyl-nginx-egg/stargazers)
+[![Contributors](https://img.shields.io/github/contributors/Ym0T/pterodactyl-nginx-egg?style=for-the-badge&color=orange)](#-contributors)
+[![Last Commit](https://img.shields.io/github/last-commit/Ym0T/pterodactyl-nginx-egg?style=for-the-badge)](https://github.com/Ym0T/pterodactyl-nginx-egg/commits/main)
+
+[![Docker Image](https://img.shields.io/badge/ghcr.io-ym0t%2Fpterodactyl--nginx--egg-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://github.com/Ym0T/pterodactyl-nginx-egg/pkgs/container/pterodactyl-nginx-egg)
+[![Pterodactyl](https://img.shields.io/badge/Pterodactyl-Egg-0E4688?style=for-the-badge)](https://pterodactyl.io)
+[![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)](https://nginx.org)
+[![PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4%20%7C%208.5-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/supported-versions.php)
+[![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-555555?style=for-the-badge&logo=linux&logoColor=white)](#docker-images)
+
+</div>
 
 <br>
 
@@ -49,6 +65,23 @@ A versatile Pterodactyl Egg featuring Nginx, PHP 8.x, WordPress, Git, Composer, 
 4. Create a new server and select the **Nginx** egg  
 5. Choose the Docker image matching your desired PHP version  
 6. Fill in all required variables, including whether WordPress is desired and the PHP version field (must be set explicitly)  
+
+<br>
+
+## Docker Images
+
+All images are published to the GitHub Container Registry and support **AMD64** and **ARM64**.
+
+| PHP | Image | Status |
+|-----|-------|--------|
+| 8.5 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.5-latest` | ✅ Active support |
+| 8.4 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.4-latest` | ✅ Active support |
+| 8.3 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.3-latest` | ☑️ Security fixes only |
+| 8.2 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.2-latest` | ☑️ Security fixes only |
+
+```bash
+docker pull ghcr.io/ym0t/pterodactyl-nginx-egg:8.4-latest
+```
 
 <br>
 
@@ -370,6 +403,22 @@ The resulting configuration is written to `/home/container/php/conf.d-active` on
 - PHP extensions vary slightly per version; full list available in docs  
 - Changing PHP versions requires matching Docker image selection and restart  
 - Auto-updates are powered by the [Tavuru API](https://api.tavuru.de) for reliable version management
+
+<br>
+
+## 💙 Contributors
+
+A **huge thank you** to everyone who has contributed to this project – whether through code, bug reports, feature ideas, testing, or helping others in the issues and discussions. This egg wouldn't be what it is today without you! 🙏
+
+<a href="https://github.com/Ym0T/pterodactyl-nginx-egg/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Ym0T/pterodactyl-nginx-egg" alt="Contributors" />
+</a>
+
+Special thanks to [tenten8401](https://gitlab.com/tenten8401/pterodactyl-nginx) for the original project this egg is based on.
+
+### Want to contribute?
+
+Contributions are always welcome! Feel free to open an [issue](https://github.com/Ym0T/pterodactyl-nginx-egg/issues) or submit a [pull request](https://github.com/Ym0T/pterodactyl-nginx-egg/pulls). ⭐ If this egg is useful to you, consider giving the repo a star!
 
 <br>
 
