@@ -140,8 +140,13 @@ if [ "${WORDPRESS}" == "true" ] || [ "${WORDPRESS}" == "1" ]; then
         rm -rf wordpress latest.tar.gz
         echo "[SETUP] WordPress installed - http://ip:port/wp-admin"
     elif [ -z "${GIT_ADDRESS}" ]; then
-        # Create a simple PHP info page if WordPress is not installed
-        echo "<?php phpinfo(); ?>" > "www/index.php"
+        if [ "${PHP_STATUS}" == "false" ] || [ "${PHP_STATUS}" == "0" ]; then
+            # Create a simple static page if PHP is disabled
+            echo "<!DOCTYPE html><html><head><title>It works!</title></head><body><h1>It works!</h1><p>Nginx is serving static files (PHP disabled).</p></body></html>" > "www/index.html"
+        else
+            # Create a simple PHP info page if WordPress is not installed
+            echo "<?php phpinfo(); ?>" > "www/index.php"
+        fi
 fi
 
 echo -e "[DONE] Everything has been installed successfully"

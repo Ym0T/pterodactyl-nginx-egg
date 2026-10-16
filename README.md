@@ -32,6 +32,7 @@
 - [Cronjob](#cronjob)
 - [Change PHP version](#change-php-version)
 - [PHP extensions](#php-extensions)
+- [Static / SPA mode (disable PHP)](#static--spa-mode-disable-php)
 - [Notes](#notes)
 - [License](#license)
 
@@ -46,6 +47,7 @@
 - 🔐 ionCube Loader: Auto-detected and enabled for encrypted PHP  
 - 🌐 Cloudflare Tunnel: Secure tunnel with token validation  
 - 🚀 PHP-NGINX Startup: Auto-detects PHP-FPM version, runs NGINX in foreground  
+- 🗂️ Static / SPA mode: Run NGINX without PHP-FPM for Angular, React, Vue & co.  
 - 🖥️ Multi-arch support: AMD64 & ARM64  
 - 🎯 **Selectable PHP Versions:**
   - ✅ 8.5
@@ -393,6 +395,32 @@ The resulting configuration is written to `/home/container/php/conf.d-active` on
 > `docker exec` sessions don't run the startup script. To use the same configuration there, run `export PHP_INI_SCAN_DIR=/home/container/php/conf.d-active` first (the directory only exists when one of the options above is in use).
 
 > Extensions that are not in the image still have to be added to it.
+
+<br>
+
+## Static / SPA mode (disable PHP)
+
+Pure static sites and prebuilt single page applications (Angular, React, Vue, ...) don't need PHP-FPM. Set `Enable PHP` (`PHP_STATUS`) in the Startup tab to `0` and restart:
+
+- PHP-FPM is not started, which saves its memory.
+- NGINX serves the files in `www` and falls back to `/index.html` for unknown paths, so client-side routing works on deep links and reloads.
+- Requests to `.php` files return `404`, PHP source code is never delivered as plain text.
+- Composer and cron jobs keep working, they use the PHP CLI of the image.
+
+With `PHP_STATUS=1` (default) everything behaves as before.
+
+### Existing servers
+
+`nginx/conf.d/default.conf` is never touched by auto-updates, so servers installed before this option need two manual steps:
+
+1. Update / re-import the egg in the panel so the new `Enable PHP` variable shows up.
+2. In `nginx/conf.d/default.conf`, replace the `location / { ... }` and `location ~ \.php$ { ... }` blocks with:
+   ```nginx
+   include /home/container/tmp/php-mode.conf;
+   ```
+   If you haven't customised `default.conf`, you can also copy `nginx/conf.d/default.conf.example` over it. The `listen` port is set by the panel on every start.
+
+The included file is regenerated on every start from `nginx/snippets/php-enabled.conf` or `nginx/snippets/php-disabled.conf`, depending on `PHP_STATUS`, so don't edit it. If PHP is disabled and no server block includes it, a warning is printed to the console.
 
 <br>
 
