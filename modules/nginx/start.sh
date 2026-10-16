@@ -15,33 +15,64 @@ header() {
   echo -e "${BOLD_BLUE}$1${NC}"
 }
 
+# Helper to test enabled status: true or 1
+is_enabled() { [[ "$1" =~ ^(true|1)$ ]]; }
+
 # Configurable paths/files via env vars with defaults
+PHP_STATUS="${PHP_STATUS:-true}"
 PHP_VERSION="${PHP_VERSION:-8.4}"
 PHP_INI="${PHP_INI:-/home/container/php/php.ini}"
 PHP_FPM_CONF="${PHP_FPM_CONF:-/home/container/php/php-fpm.conf}"
 NGINX_CONF="${NGINX_CONF:-/home/container/nginx/nginx.conf}"
 NGINX_PREFIX="${NGINX_PREFIX:-/home/container}"
 
-# Locate php-fpm binary for the desired version
-if command -v "php-fpm${PHP_VERSION}" >/dev/null 2>&1; then
-  PHP_FPM_BIN="php-fpm${PHP_VERSION}"
-elif command -v php-fpm >/dev/null 2>&1; then
-  PHP_FPM_BIN=php-fpm
-else
-  echo -e "${RED}[Startup] ERROR: php-fpm${PHP_VERSION} not found; this may indicate a version mismatch between your Docker image and the PHP_VERSION variable (${PHP_VERSION}).${NC}"
-  exit 1
-fi
+# Location snippet included by the server blocks in nginx/conf.d/ (regenerated on every start)
+PHP_MODE_CONF="${NGINX_PREFIX}/tmp/php-mode.conf"
+mkdir -p "${NGINX_PREFIX}/tmp"
 
-# Start PHP-FPM
-header "[Startup] Starting PHP-FPM"
-echo -e "${WHITE}[Startup] Launching ${PHP_FPM_BIN} (PHP ${PHP_VERSION})${NC}"
-"$PHP_FPM_BIN" \
-  -c "$PHP_INI" \
-  --fpm-config "$PHP_FPM_CONF" \
-  --daemonize > /dev/null 2>&1 || {
-    echo -e "${RED}[Startup] ERROR: Failed to launch ${PHP_FPM_BIN}. Please check that your PHP_VERSION matches the installed php-fpm binary.${NC}"
+select_php_mode() {
+  cp "${NGINX_PREFIX}/nginx/snippets/$1" "$PHP_MODE_CONF" 2>/dev/null \
+    || echo -e "${YELLOW}[Startup] WARNING: nginx/snippets/$1 not found, ${PHP_MODE_CONF} was not updated.${NC}"
+}
+
+if is_enabled "$PHP_STATUS"; then
+  select_php_mode php-enabled.conf
+
+  # Locate php-fpm binary for the desired version
+  if command -v "php-fpm${PHP_VERSION}" >/dev/null 2>&1; then
+    PHP_FPM_BIN="php-fpm${PHP_VERSION}"
+  elif command -v php-fpm >/dev/null 2>&1; then
+    PHP_FPM_BIN=php-fpm
+  else
+    echo -e "${RED}[Startup] ERROR: php-fpm${PHP_VERSION} not found; this may indicate a version mismatch between your Docker image and the PHP_VERSION variable (${PHP_VERSION}).${NC}"
     exit 1
-  }
+  fi
+
+  # Start PHP-FPM
+  header "[Startup] Starting PHP-FPM"
+  echo -e "${WHITE}[Startup] Launching ${PHP_FPM_BIN} (PHP ${PHP_VERSION})${NC}"
+  "$PHP_FPM_BIN" \
+    -c "$PHP_INI" \
+    --fpm-config "$PHP_FPM_CONF" \
+    --daemonize > /dev/null 2>&1 || {
+      echo -e "${RED}[Startup] ERROR: Failed to launch ${PHP_FPM_BIN}. Please check that your PHP_VERSION matches the installed php-fpm binary.${NC}"
+      exit 1
+    }
+else
+  select_php_mode php-disabled.conf
+
+  header "[Startup] PHP disabled"
+  echo -e "${WHITE}[Startup] PHP-FPM disabled (PHP_STATUS=${PHP_STATUS}) - serving static files, SPA fallback to /index.html${NC}"
+
+  # Existing installs keep their old default.conf (protected from auto-updates)
+  if ! grep -qs "php-mode.conf" "${NGINX_PREFIX}/nginx/conf.d/"*.conf; then
+    echo -e "${YELLOW}[Startup] WARNING: No server block in nginx/conf.d/ includes ${PHP_MODE_CONF}.${NC}"
+    echo -e "${YELLOW}[Startup] The SPA fallback is not active and .php requests will fail.${NC}"
+    echo -e "${YELLOW}[Startup] Replace the 'location /' and 'location ~ \\.php\$' blocks in nginx/conf.d/default.conf with:${NC}"
+    echo -e "${YELLOW}[Startup]     include ${PHP_MODE_CONF};${NC}"
+    echo -e "${YELLOW}[Startup] or copy nginx/conf.d/default.conf.example over default.conf.${NC}"
+  fi
+fi
 
 # Success message
 echo -e "${GREEN}[Startup] Services successfully launched!${NC}"
