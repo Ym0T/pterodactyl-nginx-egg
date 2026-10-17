@@ -40,7 +40,7 @@
 
 ## Features
 
-- 🔄 **Auto-Update**: Automatically checks for and applies updates via Tavuru API
+- 🔄 **Auto-Update**: Automatically checks for and applies signed updates via the open-source [GitHub Version API](https://github.com/Ym0T/github-version-api)
 - 🧹 LogCleaner: Cleans `/tmp` and old logs (dry-run supported)  
 - 🌱 Git Module: Auto `git pull` on restart  
 - 📦 Composer Module: Installs packages from `composer.json` or a fallback variable  
@@ -93,10 +93,11 @@ The egg includes an intelligent auto-update system that keeps your installation 
 
 ### How it works:
 
-- **Automatic Version Checking**: Uses the Tavuru API to check for new releases
+- **Automatic Version Checking**: Uses the [GitHub Version API](https://github.com/Ym0T/github-version-api), hosted at `api.tavuru.de`, to check for new releases
 - **Smart Differential Updates**: Downloads only changed files, not the entire codebase
 - **Selective Updates**: Only updates core system files (modules, nginx, php configs)
 - **User Data Protection**: Never touches your `www` directory or user data
+- **Signed Updates**: Every update package is signed. The updater checks the signature before installing anything and refuses packages that don't match
 - **Self-Update Capability**: Can safely update its own update mechanism
 
 ### Configuration:
@@ -430,7 +431,7 @@ The included file is regenerated on every start from `nginx/snippets/php-enabled
 - To enable HTTPS, modify `/home/container/nginx/conf.d/default.conf` accordingly  
 - PHP extensions vary slightly per version; full list available in docs  
 - Changing PHP versions requires matching Docker image selection and restart  
-- Auto-updates are powered by the [Tavuru API](https://api.tavuru.de) for reliable version management
+- Auto-updates are served from `api.tavuru.de`, which runs the [GitHub Version API](https://github.com/Ym0T/github-version-api). Its source code is public, so you can check exactly what it does
 
 <br>
 

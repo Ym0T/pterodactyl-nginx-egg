@@ -1,10 +1,10 @@
 # Auto-Update Module
 
-This module automatically checks for and applies updates to the Pterodactyl Nginx Egg using the Tavuru API. It runs as the first module during container startup to ensure you're always running the latest version.
+This module automatically checks for and applies updates to the Pterodactyl Nginx Egg using the [GitHub Version API](https://github.com/Ym0T/github-version-api) hosted at `api.tavuru.de`. It runs as the first module during container startup to ensure you're always running the latest version.
 
 ## Features
 
-- ✅ **Automatic version checking** using Tavuru API
+- ✅ **Automatic version checking** using the GitHub Version API
 - ✅ **Smart differential updates** - only downloads changed files
 - ✅ **Selective file updates** - only updates allowed directories and files
 - ✅ **Version tracking** via local version file
@@ -42,7 +42,7 @@ The auto-update module only updates specific directories and files to maintain s
 
 ## How It Works
 
-1. **Version Check**: Reads current version from `/home/container/version.txt`
+1. **Version Check**: Reads current version from `/home/container/VERSION`
 2. **API Query**: Fetches latest version from `https://api.tavuru.de/version/Ym0T/pterodactyl-nginx-egg`
 3. **Comparison**: Compares current vs latest version
 4. **Diff Download**: If update available, downloads differential update package
@@ -51,7 +51,7 @@ The auto-update module only updates specific directories and files to maintain s
 
 ## API Integration
 
-This module uses the **Tavuru API** for version management:
+This module uses the [GitHub Version API](https://github.com/Ym0T/github-version-api), hosted at `api.tavuru.de`. The source code is public, and [SIGNING.md](https://github.com/Ym0T/github-version-api/blob/main/SIGNING.md) describes the signed manifest the module checks before installing an update:
 
 ### Version API
 ```bash
@@ -135,6 +135,7 @@ Add these variables to your `egg-nginx-v2.json`:
 
 ## Security Considerations
 
+- **Signed Updates**: Every update package comes with a manifest signed by the API. The module checks the signature with the public key embedded in `start.sh`, and that the manifest names this repository, the installed and the new version, the SHA-256 of the package and a recent creation time. Anything that doesn't match is not installed
 - **Limited Scope**: Only updates approved directories and files
 - **Version Verification**: Uses official API for version information
 - **Safe Downloads**: Temporary files are cleaned up after use
@@ -178,6 +179,7 @@ echo "unknown" > /home/container/VERSION
 
 - **curl**: For API requests and file downloads
 - **unzip**: For extracting update packages  
+- **openssl/sha256sum/base64**: For verifying signed updates (without them, updates are refused)
 - **grep/cut**: For JSON parsing (lightweight approach)
 - Standard Unix utilities (cp, chmod, mkdir, etc.)
 

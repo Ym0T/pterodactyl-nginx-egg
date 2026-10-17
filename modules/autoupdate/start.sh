@@ -13,99 +13,135 @@ MAGENTA='\033[0;35m'; CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ============================================================================
-# CRYPTOGRAPHIC SIGNATURE VERIFICATION
+# UPDATE VERIFICATION
 # ============================================================================
-# Ed25519 Public Key for verifying update signatures
-# This key is embedded in the script to prevent tampering
-# Generate new keypair: Run API with SIGNING_PRIVATE_KEY not set, then generate
-# PUBLIC_KEY_BASE64="YOUR_PUBLIC_KEY_HERE"
+# Ed25519 public key of the update API. Every update package comes with a
+# manifest signed by this key. It names the repository, both versions and the
+# SHA-256 of the package, and nothing is installed unless all of it matches.
+# Generate a key pair with: version-api generate-keypair
 PUBLIC_KEY_BASE64="5MpxNNMkROJLixsSTk/PDBAFRF3bP+zr3U0lzzK/py4="
 
-# Verify signature of downloaded update
-# Usage: verify_signature <file_path> <signature_base64> <expected_hash>
-# Returns: 0 if valid, 1 if invalid or verification unavailable
-verify_signature() {
-    local file_path="$1"
-    local signature_b64="$2"
-    local expected_hash="$3"
+# Signed manifests older than this are rejected (seconds). Update packages only
+# live 24 hours on the API, so an older manifest means an old response is being
+# replayed.
+MAX_MANIFEST_AGE=172800
 
-    # Skip verification if no public key is configured
-    if [[ -z "$PUBLIC_KEY_BASE64" ]]; then
-        echo -e "${YELLOW}[AutoUpdate] ⚠ Signature verification skipped - no public key configured${NC}"
-        return 0
-    fi
-
-    # Check if openssl is available
-    if ! command -v openssl >/dev/null 2>&1; then
-        echo -e "${YELLOW}[AutoUpdate] ⚠ Signature verification skipped - openssl not available${NC}"
-        return 0
-    fi
-
-    echo -e "${CYAN}[AutoUpdate] 🔐 Verifying cryptographic signature...${NC}"
-
-    # Verify file hash first
-    local actual_hash
-    actual_hash=$(sha256sum "$file_path" | cut -d' ' -f1)
-
-    if [[ "$actual_hash" != "$expected_hash" ]]; then
-        echo -e "${RED}[AutoUpdate] ✗ Hash mismatch!${NC}"
-        echo -e "${RED}[AutoUpdate]   Expected: $expected_hash${NC}"
-        echo -e "${RED}[AutoUpdate]   Actual:   $actual_hash${NC}"
+# Print a string field of a single-line JSON document, with the escapes the API
+# uses (\n and \") decoded. Fails if the field is missing or uses any other
+# escape, so the result is always byte for byte what the API signed.
+# Usage: json_string_field <json> <key>
+json_string_field() {
+    local json="$1" key="$2" raw
+    raw=$(printf '%s' "$json" | grep -oE "\"${key}\":\"([^\"\\\\]|\\\\.)*\"" | head -n 1) || return 1
+    [[ -n "$raw" ]] || return 1
+    raw="${raw#\"${key}\":\"}"
+    raw="${raw%\"}"
+    if printf '%s' "$raw" | grep -q '\\[^n"]'; then
         return 1
     fi
+    printf '%s' "$raw" | sed -e 's/\\n/\n/g' -e 's/\\"/"/g'
+}
 
-    echo -e "${GREEN}[AutoUpdate] ✓ Hash verified: ${actual_hash:0:16}...${NC}"
+# Print the value of a manifest line (key=value)
+manifest_field() {
+    sed -n "s/^$2=//p" "$1" | head -n 1
+}
 
-    # Decode public key and signature to temp files
-    local temp_dir
+# Verify a downloaded update package against the signed manifest
+# Usage: verify_update <zip_file> <api_response> <from_version> <to_version>
+# Returns: 0 only if the signature and every field match
+verify_update() {
+    local tool
+    for tool in openssl sha256sum base64; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            echo -e "${RED}[AutoUpdate] ✗ ${tool} is not available, the update can't be verified${NC}"
+            return 1
+        fi
+    done
+
+    echo -e "${CYAN}[AutoUpdate] 🔐 Verifying signed manifest...${NC}"
+
+    local temp_dir result=0
     temp_dir=$(mktemp -d)
+    check_manifest "$temp_dir" "$@" || result=1
+    rm -rf "$temp_dir"
+    return $result
+}
+
+check_manifest() {
+    local temp_dir="$1" zip_file="$2" response="$3" from_version="$4" to_version="$5"
     local pub_key_file="$temp_dir/public.pem"
-    local sig_file="$temp_dir/signature.bin"
-    local hash_file="$temp_dir/hash.bin"
+    local manifest_file="$temp_dir/manifest"
+    local sig_file="$temp_dir/manifest.sig"
 
     # Convert base64 public key to PEM format for Ed25519
-    # Ed25519 public key is 32 bytes, we need to wrap it in proper ASN.1 structure
+    # (Ed25519 OID prefix MCowBQYDK2VwAyEA + base64 public key)
     {
         echo "-----BEGIN PUBLIC KEY-----"
-        # Add Ed25519 OID prefix (MCowBQYDK2VwAyEA) + base64 public key
-        echo "MCowBQYDK2VwAyEA$(echo "$PUBLIC_KEY_BASE64")" | fold -w 64
+        echo "MCowBQYDK2VwAyEA${PUBLIC_KEY_BASE64}" | fold -w 64
         echo "-----END PUBLIC KEY-----"
     } > "$pub_key_file"
 
-    # Decode signature from base64
-    echo "$signature_b64" | base64 -d > "$sig_file" 2>/dev/null || {
-        echo -e "${RED}[AutoUpdate] ✗ Failed to decode signature${NC}"
-        rm -rf "$temp_dir"
+    if ! json_string_field "$response" manifest > "$manifest_file" || [[ ! -s "$manifest_file" ]]; then
+        echo -e "${RED}[AutoUpdate] ✗ The API response contains no valid manifest${NC}"
         return 1
-    }
-
-    # Create hash file (the signature is over the hash, not the file directly)
-    # Convert hex to binary - use xxd if available, otherwise use printf
-    if command -v xxd >/dev/null 2>&1; then
-        echo -n "$expected_hash" | xxd -r -p > "$hash_file"
-    else
-        # Fallback: convert hex to binary using printf
-        local hex="$expected_hash"
-        local i
-        > "$hash_file"  # Create empty file
-        for ((i=0; i<${#hex}; i+=2)); do
-            printf "\x${hex:$i:2}" >> "$hash_file"
-        done
+    fi
+    if ! json_string_field "$response" manifest_signature | base64 -d > "$sig_file" 2>/dev/null; then
+        echo -e "${RED}[AutoUpdate] ✗ Failed to decode the manifest signature${NC}"
+        return 1
     fi
 
-    # Verify signature using openssl (Ed25519)
-    if openssl pkeyutl -verify -pubin -inkey "$pub_key_file" \
-        -sigfile "$sig_file" -in "$hash_file" -rawin 2>/dev/null; then
-        echo -e "${GREEN}[AutoUpdate] ✓ Signature verified - update is authentic${NC}"
-        rm -rf "$temp_dir"
-        return 0
-    else
+    if ! openssl pkeyutl -verify -pubin -inkey "$pub_key_file" -rawin \
+        -in "$manifest_file" -sigfile "$sig_file" >/dev/null 2>&1; then
         echo -e "${RED}[AutoUpdate] ✗ Signature verification FAILED!${NC}"
         echo -e "${RED}[AutoUpdate]   The update may have been tampered with.${NC}"
         echo -e "${RED}[AutoUpdate]   Update will NOT be applied for security reasons.${NC}"
-        rm -rf "$temp_dir"
         return 1
     fi
+    echo -e "${GREEN}[AutoUpdate] ✓ Signature verified${NC}"
+
+    # The manifest is authentic. Now make sure it is the update we asked for.
+    local format repository from to sha256 created_at actual_hash age
+    format=$(manifest_field "$manifest_file" format)
+    repository=$(manifest_field "$manifest_file" repository)
+    from=$(manifest_field "$manifest_file" from)
+    to=$(manifest_field "$manifest_file" to)
+    sha256=$(manifest_field "$manifest_file" sha256)
+    created_at=$(manifest_field "$manifest_file" created_at)
+
+    if [[ "$format" != "version-api-update-manifest/1" ]]; then
+        echo -e "${RED}[AutoUpdate] ✗ Unknown manifest format: ${format}${NC}"
+        return 1
+    fi
+    if [[ "${repository,,}" != "${REPO_OWNER,,}/${REPO_NAME,,}" ]]; then
+        echo -e "${RED}[AutoUpdate] ✗ The update belongs to another repository: ${repository}${NC}"
+        return 1
+    fi
+    if [[ "$from" != "$from_version" || "$to" != "$to_version" ]]; then
+        echo -e "${RED}[AutoUpdate] ✗ The update is for ${from} → ${to}, expected ${from_version} → ${to_version}${NC}"
+        return 1
+    fi
+
+    actual_hash=$(sha256sum "$zip_file" | cut -d' ' -f1)
+    if [[ -z "$sha256" || "$actual_hash" != "$sha256" ]]; then
+        echo -e "${RED}[AutoUpdate] ✗ Hash mismatch!${NC}"
+        echo -e "${RED}[AutoUpdate]   Expected: ${sha256}${NC}"
+        echo -e "${RED}[AutoUpdate]   Actual:   ${actual_hash}${NC}"
+        return 1
+    fi
+
+    if ! [[ "$created_at" =~ ^[0-9]{1,12}$ ]]; then
+        echo -e "${RED}[AutoUpdate] ✗ The manifest has no valid creation time${NC}"
+        return 1
+    fi
+    age=$(( $(date +%s) - 10#$created_at ))
+    if (( age > MAX_MANIFEST_AGE )); then
+        echo -e "${RED}[AutoUpdate] ✗ The manifest is too old (${age}s), refusing to install it${NC}"
+        return 1
+    fi
+
+    echo -e "${GREEN}[AutoUpdate] ✓ Update verified: ${repository} ${from} → ${to}, hash ${actual_hash:0:16}...${NC}"
+    return 0
 }
 
 # Header function
@@ -432,16 +468,13 @@ apply_update() {
     return 1
   fi
 
-  # Extract signature information for verification
-  local signature checksum
-  signature=$(echo "$diff_response" | grep -o '"signature":"[^"]*"' | cut -d'"' -f4 || echo "")
-  checksum=$(echo "$diff_response" | grep -o '"checksum":"[^"]*"' | cut -d'"' -f4 || echo "")
-
-  if [[ -n "$signature" && -n "$checksum" ]]; then
-    echo -e "${CYAN}[AutoUpdate] 🔐 Signed update detected${NC}"
-  elif [[ -n "$PUBLIC_KEY_BASE64" ]]; then
-    echo -e "${YELLOW}[AutoUpdate] ⚠ Update is unsigned but signature verification is enabled${NC}"
+  # Every update must come with a signed manifest
+  if [[ "$diff_response" != *'"manifest_signature":"'* ]]; then
+    echo -e "${RED}[AutoUpdate] ✗ The update is not signed, aborting for security reasons${NC}"
+    rm -f "$temp_diff_file"
+    return 1
   fi
+  echo -e "${CYAN}[AutoUpdate] 🔐 Signed update detected${NC}"
 
   # Extract file change information for logging
   local total_changes files_added files_modified files_removed
@@ -488,19 +521,10 @@ apply_update() {
     return 1
   fi
 
-  # Verify signature if available
-  if [[ -n "$signature" && -n "$checksum" ]]; then
-    if ! verify_signature "$zip_file" "$signature" "$checksum"; then
-      echo -e "${RED}[AutoUpdate] ✗ Signature verification failed - aborting update${NC}"
-      rm -f "$zip_file" "$temp_diff_file"
-      return 1
-    fi
-  elif [[ -n "$PUBLIC_KEY_BASE64" && "$PUBLIC_KEY_BASE64" != "YOUR_PUBLIC_KEY_HERE" ]]; then
-    # Public key is configured but update is unsigned - reject for security
-    echo -e "${RED}[AutoUpdate] ✗ Update is unsigned but signature verification is required${NC}"
-    echo -e "${RED}[AutoUpdate] ✗ Aborting update for security reasons${NC}"
-    echo -e "${YELLOW}[AutoUpdate] To allow unsigned updates, remove or comment out PUBLIC_KEY_BASE64${NC}"
-    rm -f "$zip_file" "$temp_diff_file"
+  # Verify the package against the signed manifest before extracting anything
+  if ! verify_update "$zip_file" "$diff_response" "$from_version" "$to_version"; then
+    echo -e "${RED}[AutoUpdate] ✗ Update verification failed - aborting update${NC}"
+    rm -f "$zip_file"
     return 1
   fi
 
