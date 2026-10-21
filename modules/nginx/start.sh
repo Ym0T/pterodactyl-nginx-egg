@@ -50,7 +50,7 @@ if is_enabled "$PHP_STATUS"; then
 
   # Start PHP-FPM
   header "[Startup] Starting PHP-FPM"
-  echo -e "${WHITE}[Startup] Launching ${PHP_FPM_BIN} (PHP ${PHP_VERSION})${NC}"
+  echo -e "${WHITE}[Startup] Launching ${PHP_FPM_BIN} ($("$PHP_FPM_BIN" -v 2>/dev/null | head -n1 | cut -d' ' -f1-2))${NC}"
   "$PHP_FPM_BIN" \
     -c "$PHP_INI" \
     --fpm-config "$PHP_FPM_CONF" \
