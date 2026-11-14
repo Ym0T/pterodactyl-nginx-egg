@@ -270,6 +270,106 @@
             "user_editable": true,
             "rules": "required|boolean",
             "field_type": "text"
+        },
+        {
+            "name": "PHP memory_limit",
+            "description": "PHP memory_limit. Example: 512M",
+            "env_variable": "PHP_MEMORY_LIMIT",
+            "default_value": "512M",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:10",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP max_execution_time",
+            "description": "Maximum seconds one PHP request may run.",
+            "env_variable": "PHP_MAX_EXECUTION_TIME",
+            "default_value": "300",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric|between:1,86400",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP max_input_time",
+            "description": "Maximum seconds spent reading request input.",
+            "env_variable": "PHP_MAX_INPUT_TIME",
+            "default_value": "300",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric|between:1,86400",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP post_max_size",
+            "description": "Upper limit of the POST body. Example: 128M",
+            "env_variable": "PHP_POST_MAX_SIZE",
+            "default_value": "128M",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:10",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP upload_max_filesize",
+            "description": "Upper limit of one uploaded file. Example: 128M",
+            "env_variable": "PHP_UPLOAD_MAX_FILESIZE",
+            "default_value": "128M",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:10",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP opcache",
+            "description": "opcache.enable. 1 on, 0 off.",
+            "env_variable": "PHP_OPCACHE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP-FPM max_children",
+            "description": "Maximum PHP processes running at the same time.",
+            "env_variable": "PHP_FPM_MAX_CHILDREN",
+            "default_value": "10",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric|between:1,100",
+            "field_type": "text"
+        },
+        {
+            "name": "Nginx client_max_body_size",
+            "description": "Largest request body nginx accepts. Example: 128M",
+            "env_variable": "NGINX_CLIENT_MAX_BODY_SIZE",
+            "default_value": "128M",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:10",
+            "field_type": "text"
+        },
+        {
+            "name": "Extra PHP directives",
+            "description": "Appended to php.ini as written, one directive per line.",
+            "env_variable": "PHP_EXTRA_DIRECTIVES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:5000",
+            "field_type": "text"
+        },
+        {
+            "name": "Extra nginx directives",
+            "description": "Included at the end of the server block as written.",
+            "env_variable": "NGINX_EXTRA_DIRECTIVES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:5000",
+            "field_type": "text"
         }
     ]
 }
