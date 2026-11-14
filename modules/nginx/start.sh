@@ -26,6 +26,11 @@ PHP_FPM_CONF="${PHP_FPM_CONF:-/home/container/php/php-fpm.conf}"
 NGINX_CONF="${NGINX_CONF:-/home/container/nginx/nginx.conf}"
 NGINX_PREFIX="${NGINX_PREFIX:-/home/container}"
 
+if [[ -f "${NGINX_PREFIX}/modules/nginx/apply-settings.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${NGINX_PREFIX}/modules/nginx/apply-settings.sh"
+fi
+
 # Location snippet included by the server blocks in nginx/conf.d/ (regenerated on every start)
 PHP_MODE_CONF="${NGINX_PREFIX}/tmp/php-mode.conf"
 mkdir -p "${NGINX_PREFIX}/tmp"
@@ -37,6 +42,10 @@ select_php_mode() {
 
 if is_enabled "$PHP_STATUS"; then
   select_php_mode php-enabled.conf
+  if [[ -f "${NGINX_PREFIX}/modules/nginx/apply-settings.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "${NGINX_PREFIX}/modules/nginx/apply-settings.sh" phpmode
+  fi
 
   # Locate php-fpm binary for the desired version
   if command -v "php-fpm${PHP_VERSION}" >/dev/null 2>&1; then
