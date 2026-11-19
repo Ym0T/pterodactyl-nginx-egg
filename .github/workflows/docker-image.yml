@@ -36,6 +36,15 @@ jobs:
       - name: Compute lowercase image name
         run: echo "IMAGE_NAME_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
+      # Cache is too aggresive and is not installing the latest nginx build quick enough.
+      - name: Get latest nginx mainline version
+        id: nginx
+        run: |
+          v=$(curl -fsSL https://nginx.org/packages/mainline/debian/dists/bookworm/nginx/binary-amd64/Packages \
+            | awk '/^Package: nginx$/{f=1;next} f&&/^Version:/{print $2;f=0}' | sort -V | tail -1)
+          test -n "$v" || { echo "Could not determine nginx version"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
       # Install the cosign tool except on PR
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -81,6 +90,7 @@ jobs:
           cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref=ghcr.io/{0}:buildcache-{1},mode=max,image-manifest=true,oci-mediatypes=true', env.IMAGE_NAME_LC, matrix.php-version) || '' }}
           build-args: |
             PHP_VERSION=${{ matrix.php-version }}
+            NGINX_VERSION=${{ steps.nginx.outputs.version }}
 
       # Sign the resulting Docker image digest except on PRs.
       - name: Sign the published Docker image
