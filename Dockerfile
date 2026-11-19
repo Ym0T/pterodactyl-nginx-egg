@@ -3,6 +3,7 @@ FROM debian:bookworm-slim
 LABEL author="Ym0t" maintainer="YmoT@tuta.com"
 
 ARG PHP_VERSION
+ARG NGINX_VERSION
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -17,6 +18,8 @@ RUN apt-get update && apt-get install -y \
         debian-archive-keyring \
         unzip \
         certbot \
+    # Adding this here in an attempt to do some soft cache busting.
+    && echo "Installing nginx-${NGINX_VERSION}" \
     && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/mainline/debian bookworm nginx" > /etc/apt/sources.list.d/nginx.list \
     && printf "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n" > /etc/apt/preferences.d/99nginx \
