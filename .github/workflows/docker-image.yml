@@ -1,6 +1,13 @@
 name: Docker
 
 on:
+  # Manual run, e.g. to ship a security fix right away
+  workflow_dispatch:
+    inputs:
+      no_cache:
+        description: 'Full rebuild without cache'
+        type: boolean
+        default: false
   schedule:
     - cron: '24 9 * * *'
   push:
@@ -36,14 +43,34 @@ jobs:
       - name: Compute lowercase image name
         run: echo "IMAGE_NAME_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
-      # Cache is too aggresive and is not installing the latest nginx build quick enough.
-      - name: Get latest nginx mainline version
-        id: nginx
+      # The registry cache never expires on its own. These values are passed as build args,
+      # so the package layer is rebuilt as soon as one of them changes:
+      # nginx and composer versions, cloudflared release tag, a hash over all Sury packages
+      # of this PHP version (incl. extensions) and the month as fallback for Debian packages.
+      - name: Check upstream versions
+        id: versions
+        env:
+          PHP_VERSION: ${{ matrix.php-version }}
         run: |
-          v=$(curl -fsSL https://nginx.org/packages/mainline/debian/dists/bookworm/nginx/binary-amd64/Packages \
+          set -euo pipefail
+          nginx=$(curl -fsSL https://nginx.org/packages/mainline/debian/dists/bookworm/nginx/binary-amd64/Packages \
             | awk '/^Package: nginx$/{f=1;next} f&&/^Version:/{print $2;f=0}' | sort -V | tail -1)
-          test -n "$v" || { echo "Could not determine nginx version"; exit 1; }
-          echo "version=$v" >> "$GITHUB_OUTPUT"
+          php=$(curl -fsSL https://packages.sury.org/php/dists/bookworm/main/binary-amd64/Packages \
+            | awk -v v="php${PHP_VERSION}" '/^Package: /{p=$2} /^Version: /{if (p == v || index(p, v "-") == 1) print p, $2}' \
+            | sort | sha256sum | cut -c1-16)
+          cloudflared=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/cloudflare/cloudflared/releases/latest | sed 's#.*/##')
+          composer=$(curl -fsSL https://getcomposer.org/versions | jq -r '.stable[0].version')
+          for name in nginx php cloudflared composer; do
+            test -n "${!name}" || { echo "Could not determine $name version"; exit 1; }
+          done
+          {
+            echo "nginx=$nginx"
+            echo "php=$php"
+            echo "cloudflared=$cloudflared"
+            echo "composer=$composer"
+            echo "month=$(date -u +%Y-%m)"
+          } >> "$GITHUB_OUTPUT"
+          echo "nginx=$nginx php-pkgs=$php cloudflared=$cloudflared composer=$composer"
 
       # Install the cosign tool except on PR
       - name: Install cosign
@@ -88,9 +115,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME_LC }}:buildcache-${{ matrix.php-version }}
           cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref=ghcr.io/{0}:buildcache-{1},mode=max,image-manifest=true,oci-mediatypes=true', env.IMAGE_NAME_LC, matrix.php-version) || '' }}
+          no-cache: ${{ inputs.no_cache == true }}
           build-args: |
             PHP_VERSION=${{ matrix.php-version }}
-            NGINX_VERSION=${{ steps.nginx.outputs.version }}
+            NGINX_VERSION=${{ steps.versions.outputs.nginx }}
+            PHP_PKG_HASH=${{ steps.versions.outputs.php }}
+            CLOUDFLARED_VERSION=${{ steps.versions.outputs.cloudflared }}
+            COMPOSER_VERSION=${{ steps.versions.outputs.composer }}
+            CACHE_MONTH=${{ steps.versions.outputs.month }}
 
       # Sign the resulting Docker image digest except on PRs.
       - name: Sign the published Docker image
