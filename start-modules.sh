@@ -88,6 +88,18 @@ else
   rm -rf "$PHP_CONF_ACTIVE"
 fi
 
+# Show the versions shipped with the image (after the PHP setup, so disabled extensions show up as such)
+header "Image versions"
+show_version() { echo -e "${WHITE}  $(printf '%-12s' "$1") ${2:-${3:-not found}}${NC}"; }
+show_version "Debian"      "$(cat /etc/debian_version 2>/dev/null)"
+show_version "nginx"       "$(nginx -v 2>&1 | awk -F/ '/^nginx version/ {print $2}')"
+show_version "PHP"         "$(php -r 'echo PHP_VERSION;' 2>/dev/null)"
+show_version "ionCube"     "$(php -r 'if (function_exists("ioncube_loader_version")) echo ioncube_loader_version();' 2>/dev/null)" "not loaded"
+show_version "Composer"    "$(composer --version --no-ansi 2>/dev/null | awk 'NR==1 {print $3}')"
+show_version "cloudflared" "$(cloudflared --version 2>/dev/null | awk 'NR==1 {print $3}')"
+show_version "Git"         "$(git --version 2>/dev/null | awk '{print $3}')"
+show_version "Certbot"     "$(dpkg-query -W -f='${Version}' certbot 2>/dev/null | cut -d- -f1)"
+
 # 1) Run logcleaner second if enabled
 LOGCLEANER_STATUS="${LOGCLEANER_STATUS:-false}"
 if is_enabled "$LOGCLEANER_STATUS"; then
