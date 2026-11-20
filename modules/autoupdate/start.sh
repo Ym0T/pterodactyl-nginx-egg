@@ -159,6 +159,170 @@ REPO_OWNER="Ym0T"
 REPO_NAME="pterodactyl-nginx-egg"
 CONTAINER_ROOT="/home/container"
 TEMP_DIR="/home/container/tmp/autoupdate"
+ISSUES_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/issues"
+
+# ============================================================================
+# HTTP REQUESTS AND API ERRORS
+# ============================================================================
+# The API answers errors with a JSON body such as
+#   {"error":"versions_not_sequential","message":"...","request_id":"..."}
+# http_get keeps that body for 4xx/5xx responses too, so report_http_failure
+# can show what the API said and what to do about it.
+
+# Result of the last http_get call
+HTTP_CLIENT=""       # curl or wget, empty if neither is installed
+HTTP_STATUS=""       # HTTP status code, empty if no response was received
+HTTP_ERROR=""        # network level error (DNS, timeout, TLS, aborted transfer)
+HTTP_RETRY_AFTER=""  # seconds from the Retry-After header, if the server sent one
+
+# Download a URL into a file, keeping the response body on HTTP errors.
+# Usage: http_get <url> <output_file> <max_seconds>
+# Returns: 0 only for a complete 2xx response
+http_get() {
+  local url="$1" out="$2" max_time="$3"
+  local headers="${out}.headers" errors="${out}.errors" rc=0
+
+  HTTP_CLIENT=""; HTTP_STATUS=""; HTTP_ERROR=""; HTTP_RETRY_AFTER=""
+  rm -f "$out" "$headers" "$errors"
+
+  if command -v curl >/dev/null 2>&1; then
+    HTTP_CLIENT="curl"
+    # One retry for transient errors, but only within 20 seconds so that a
+    # long Retry-After from the server doesn't hold up the server start
+    HTTP_STATUS=$(curl -sS -L --connect-timeout 15 --max-time "$max_time" \
+      --retry 1 --retry-max-time 20 \
+      -D "$headers" -o "$out" -w '%{http_code}' "$url" 2>"$errors") || rc=$?
+    if (( rc != 0 )); then
+      HTTP_ERROR=$(sed -n 's/^curl: ([0-9]*) //p' "$errors" | head -n 1)
+      HTTP_ERROR="${HTTP_ERROR:-curl exited with code ${rc}}"
+    fi
+  elif command -v wget >/dev/null 2>&1; then
+    HTTP_CLIENT="wget"
+    wget --timeout="$max_time" --tries=2 -nv -S --content-on-error \
+      -O "$out" "$url" 2>"$errors" || rc=$?
+    # -S prints the response headers indented by two spaces
+    sed -n 's/^  //p' "$errors" > "$headers"
+    HTTP_STATUS=$(sed -n 's/^HTTP\/[0-9.]* \([0-9][0-9][0-9]\).*/\1/p' "$headers" | tail -n 1)
+    # Exit code 8 only means the server answered with an error status
+    if (( rc != 0 && rc != 8 )); then
+      HTTP_ERROR=$(grep -v -e '^  ' -e '^http' "$errors" | tail -n 1)
+      HTTP_ERROR="${HTTP_ERROR:-wget exited with code ${rc}}"
+    fi
+  else
+    HTTP_ERROR="neither curl nor wget is installed"
+    return 1
+  fi
+
+  [[ "$HTTP_STATUS" =~ ^[1-5][0-9][0-9]$ ]] || HTTP_STATUS=""
+  HTTP_RETRY_AFTER=$(grep -i '^retry-after:' "$headers" 2>/dev/null | tail -n 1 | tr -dc '0-9') || true
+  rm -f "$headers" "$errors"
+
+  (( rc == 0 )) && [[ "$HTTP_STATUS" == 2* ]]
+}
+
+# Make text from the network safe to print: printable ASCII only, without
+# backslashes (so neither the terminal nor echo -e sees escape sequences),
+# whitespace collapsed, cut to <max_length> characters.
+# Usage: printf '%s' "$text" | sanitize_text [max_length]
+sanitize_text() {
+  local text
+  text=$(LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '\040-\133\135-\176' | tr -s ' ')
+  text="${text# }"
+  text="${text% }"
+  printf '%s' "${text:0:${1:-300}}"
+}
+
+# Print a string field of a JSON document for display only. Escapes are not
+# decoded, so never use this for anything that is verified.
+# Usage: json_display_field <json> <key>
+json_display_field() {
+  printf '%s' "$1" \
+    | grep -oE "\"$2\"[[:space:]]*:[[:space:]]*\"([^\"\\\\]|\\\\.)*\"" \
+    | head -n 1 \
+    | sed -E "s/^\"$2\"[[:space:]]*:[[:space:]]*\"//; s/\"\$//" \
+    | sanitize_text 300 || true
+}
+
+# Print one indented "label: value" line. The value is printed as is, so pass
+# anything that comes from the network through sanitize_text first.
+log_detail() {
+  printf "${YELLOW}[AutoUpdate]   %-13s${NC}%s\n" "$1:" "$2"
+}
+
+# Explain an API error code and what to do about it.
+# Usage: api_error_hint <error_code> <http_status> [request_id]
+api_error_hint() {
+  local code="$1" status="$2" with_id=""
+  [[ -n "${3:-}" ]] && with_id=" together with the request ID"
+  local retry="The update will be retried on the next restart."
+  local report="Retrying won't help. Please report it${with_id}: ${ISSUES_URL}"
+
+  case "$code" in
+    versions_not_sequential)
+      echo "The installed version is not part of the history of the new version in the repository," \
+           "for example because a release tag was moved or the branch was force-pushed." \
+           "This has to be fixed in the repository. ${report}" ;;
+    version_not_found)
+      echo "One of the versions is not a release of ${REPO_OWNER}/${REPO_NAME}," \
+           "or the two versions have no common history." \
+           "Check that ${VERSION_FILE} contains a released version." ;;
+    zip_target_not_latest)
+      echo "A newer version was released in the meantime. ${retry}" ;;
+    rate_limited|zip_client_limit_reached|zip_build_limit_reached|server_busy|request_timeout|\
+    storage_full|github_rate_limited|github_unavailable|internal_error|file_not_found)
+      echo "Temporary problem on the API side. ${retry}" ;;
+    diff_too_large|diff_too_large_for_zip|diff_zip_empty|unsupported_change|unsupported_file_type|\
+    repository_too_large|unsafe_path|missing_download_url|unverifiable_file)
+      echo "This update can't be packaged for automatic installation. ${report}" ;;
+    "")
+      case "$status" in
+        429|5[0-9][0-9]) echo "Temporary problem on the API side. ${retry}" ;;
+        4[0-9][0-9])     echo "The API rejected the request. ${report}" ;;
+      esac ;;
+    *)
+      echo "The API can't deliver this update. If it keeps happening, please report it${with_id}: ${ISSUES_URL}" ;;
+  esac
+}
+
+# Explain why the last http_get call failed: the network error, or the HTTP
+# status with the error code, message and request ID the API sent.
+# Usage: report_http_failure <what failed> <url> <response_file>
+report_http_failure() {
+  local what="$1" url="$2" response_file="$3"
+  local body="" code="" message="" request_id="" hint=""
+
+  echo -e "${RED}[AutoUpdate] ✗ ${what} failed${NC}"
+  log_detail "Request" "$(printf '%s' "$url" | sanitize_text 200)"
+  [[ -n "$HTTP_STATUS" ]] && log_detail "HTTP status" "$HTTP_STATUS"
+  [[ -n "$HTTP_ERROR" ]] && log_detail "Reason" "$(printf '%s' "$HTTP_ERROR" | sanitize_text 200)"
+
+  # The body of an error response explains the error. The body of a 2xx
+  # response is the (possibly binary) payload, so it is not printed.
+  if [[ -n "$HTTP_STATUS" && "$HTTP_STATUS" != 2* && -s "$response_file" ]]; then
+    body=$(head -c 4096 "$response_file" | tr -d '\000')
+    code=$(json_display_field "$body" error)
+    if [[ -n "$code" ]]; then
+      message=$(json_display_field "$body" message)
+      request_id=$(json_display_field "$body" request_id)
+      log_detail "API error" "$code"
+      [[ -n "$message" ]] && log_detail "Message" "$message"
+      [[ -n "$request_id" ]] && log_detail "Request ID" "$request_id"
+    else
+      log_detail "Response" "$(printf '%s' "$body" | sanitize_text 300)"
+    fi
+  fi
+  [[ -n "$HTTP_RETRY_AFTER" ]] && log_detail "Retry after" "${HTTP_RETRY_AFTER}s"
+
+  if [[ -z "$HTTP_CLIENT" ]]; then
+    hint="Install curl or wget in the image."
+  elif [[ -n "$HTTP_ERROR" && ( -z "$HTTP_STATUS" || "$HTTP_STATUS" == 2* ) ]]; then
+    hint="Network problem: check DNS and that outgoing HTTPS (port 443) to ${API_BASE_URL#https://} is allowed. The update will be retried on the next restart."
+  else
+    hint=$(api_error_hint "$code" "$HTTP_STATUS" "$request_id")
+  fi
+  [[ -n "$hint" ]] && echo -e "${CYAN}[AutoUpdate] → ${hint}${NC}"
+  return 0
+}
 
 # Check for staged self-update
 check_staged_update() {
@@ -221,73 +385,40 @@ get_current_version() {
   echo "unknown"
 }
 
-# Function to get latest version from API
+# Fetch the latest version from the API into LATEST_VERSION
+# Returns: 0 on success, 1 after printing why it failed
+LATEST_VERSION=""
 get_latest_version() {
   local api_url="${API_BASE_URL}/version/${REPO_OWNER}/${REPO_NAME}"
-  echo -e "${WHITE}[AutoUpdate] Fetching latest version from API...${NC}"
-  echo -e "${CYAN}[AutoUpdate] API URL: ${api_url}${NC}"
-  
-  local response
   local temp_file="${TEMP_DIR}/api_response.json"
-  
-  # Try to get response using wget
-  if command -v wget >/dev/null 2>&1; then
-    if wget --timeout=30 --tries=2 -q -O "$temp_file" "$api_url" 2>/dev/null; then
-      if [[ -s "$temp_file" ]]; then
-        response=$(cat "$temp_file")
-        echo -e "${GREEN}[AutoUpdate] Successfully fetched API response${NC}"
-      else
-        echo -e "${RED}[AutoUpdate] Empty response from API${NC}"
-        rm -f "$temp_file"
-        return 1
-      fi
-    else
-      echo -e "${RED}[AutoUpdate] wget failed to fetch from API${NC}"
-      rm -f "$temp_file"
-      return 1
-    fi
-  elif command -v curl >/dev/null 2>&1; then
-    response=$(curl -s --max-time 30 "$api_url" 2>/dev/null)
-    if [[ -z "$response" ]]; then
-      echo -e "${RED}[AutoUpdate] curl failed to fetch from API${NC}"
-      return 1
-    fi
-    echo -e "${GREEN}[AutoUpdate] Successfully fetched API response (curl)${NC}"
-  else
-    echo -e "${RED}[AutoUpdate] Neither wget nor curl available${NC}"
+  local response version
+
+  LATEST_VERSION=""
+  if ! http_get "$api_url" "$temp_file" 30; then
+    report_http_failure "Fetching the latest version" "$api_url" "$temp_file"
+    rm -f "$temp_file"
     return 1
   fi
-  
-  if [[ -z "$response" ]]; then
-    echo -e "${RED}[AutoUpdate] Empty response from API${NC}"
-    return 1
-  fi
-  
-  echo -e "${CYAN}[AutoUpdate] Raw API response: ${response:0:200}...${NC}"
-  
-  # Extract version using basic text processing
-  local version
-  version=$(echo "$response" | grep -o '"version":"[^"]*"' | cut -d'"' -f4 | head -1)
-  
-  if [[ -z "$version" ]]; then
-    echo -e "${YELLOW}[AutoUpdate] Trying alternative parsing...${NC}"
-    version=$(echo "$response" | grep -o '"version": *"[^"]*"' | cut -d'"' -f4 | head -1)
-    if [[ -z "$version" ]]; then
-      version=$(echo "$response" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
-    fi
-  fi
-  
-  # Clean up temp file
+  response=$(cat "$temp_file")
   rm -f "$temp_file"
-  
-  if [[ -n "$version" ]]; then
-    echo -e "${GREEN}[AutoUpdate] Parsed version: ${version}${NC}"
-    echo "$version"
-  else
-    echo -e "${RED}[AutoUpdate] Could not extract version from response${NC}"
-    echo -e "${YELLOW}[AutoUpdate] Full response: ${response}${NC}"
+
+  # Extract version using basic text processing
+  version=$(echo "$response" | grep -o '"version":"[^"]*"' | cut -d'"' -f4 | head -1) || true
+  if [[ -z "$version" ]]; then
+    version=$(echo "$response" | grep -o '"version": *"[^"]*"' | cut -d'"' -f4 | head -1) || true
+  fi
+  if [[ -z "$version" ]]; then
+    version=$(echo "$response" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1) || true
+  fi
+
+  if [[ -z "$version" ]]; then
+    echo -e "${RED}[AutoUpdate] ✗ Could not find a version in the API response${NC}"
+    log_detail "Request" "$api_url"
+    log_detail "Response" "$(printf '%s' "$response" | sanitize_text 300)"
     return 1
   fi
+
+  LATEST_VERSION="$version"
 }
 
 # Function to compare versions with proper semantic versioning
@@ -437,33 +568,28 @@ apply_update() {
   local diff_response
   local temp_diff_file="${TEMP_DIR}/diff_response.json"
   
-  # Download diff information using wget
-  if command -v wget >/dev/null 2>&1; then
-    if ! wget --timeout=60 --tries=2 -q -O "$temp_diff_file" "$diff_url" 2>/dev/null; then
-      echo -e "${RED}[AutoUpdate] Failed to fetch diff information${NC}"
-      rm -f "$temp_diff_file"
-      return 1
-    fi
-    diff_response=$(cat "$temp_diff_file")
-  elif command -v curl >/dev/null 2>&1; then
-    diff_response=$(curl -s --max-time 60 "$diff_url" 2>/dev/null)
-  else
-    echo -e "${RED}[AutoUpdate] No download tool available (wget/curl)${NC}"
-    return 1
-  fi
-  
-  if [[ -z "$diff_response" ]]; then
-    echo -e "${RED}[AutoUpdate] Empty diff response${NC}"
+  if ! http_get "$diff_url" "$temp_diff_file" 60; then
+    report_http_failure "Fetching the update information" "$diff_url" "$temp_diff_file"
     rm -f "$temp_diff_file"
     return 1
   fi
-  
+  diff_response=$(cat "$temp_diff_file")
+
+  if [[ -z "$diff_response" ]]; then
+    echo -e "${RED}[AutoUpdate] Empty diff response${NC}"
+    log_detail "Request" "$diff_url"
+    rm -f "$temp_diff_file"
+    return 1
+  fi
+
   # Extract download URL from response
   local download_url
-  download_url=$(echo "$diff_response" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
+  download_url=$(echo "$diff_response" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4) || true
 
   if [[ -z "$download_url" ]]; then
     echo -e "${RED}[AutoUpdate] No download URL found in diff response${NC}"
+    log_detail "Request" "$diff_url"
+    log_detail "Response" "$(printf '%s' "$diff_response" | sanitize_text 300)"
     rm -f "$temp_diff_file"
     return 1
   fi
@@ -493,24 +619,12 @@ apply_update() {
   local zip_file="${TEMP_DIR}/update.zip"
   echo -e "${WHITE}[AutoUpdate] Downloading update package...${NC}"
   
-  if command -v wget >/dev/null 2>&1; then
-    if ! wget --timeout=120 --tries=2 -q -O "$zip_file" "$download_url" 2>/dev/null; then
-      echo -e "${RED}[AutoUpdate] Failed to download update package with wget${NC}"
-      rm -f "$temp_diff_file" "$zip_file"
-      return 1
-    fi
-  elif command -v curl >/dev/null 2>&1; then
-    if ! curl -s --max-time 120 -o "$zip_file" "$download_url"; then
-      echo -e "${RED}[AutoUpdate] Failed to download update package with curl${NC}"
-      rm -f "$temp_diff_file" "$zip_file"
-      return 1
-    fi
-  else
-    echo -e "${RED}[AutoUpdate] No download tool available${NC}"
-    rm -f "$temp_diff_file"
+  if ! http_get "$download_url" "$zip_file" 120; then
+    report_http_failure "Downloading the update package" "$download_url" "$zip_file"
+    rm -f "$temp_diff_file" "$zip_file"
     return 1
   fi
-  
+
   # Clean up diff response file
   rm -f "$temp_diff_file"
   
@@ -652,41 +766,32 @@ main() {
   current_version=$(get_current_version)
   echo -e "${WHITE}[AutoUpdate] Current version: ${current_version}${NC}"
   
-  # Test basic connectivity first using wget
+  # Test basic connectivity first
   echo -e "${CYAN}[AutoUpdate] Testing connectivity to ${API_BASE_URL}...${NC}"
   local temp_health_file="${TEMP_DIR}/health_check.tmp"
-  
-  if command -v wget >/dev/null 2>&1; then
-    if wget --timeout=10 --tries=1 -q -O "$temp_health_file" "${API_BASE_URL}/health" 2>/dev/null; then
-      echo -e "${GREEN}[AutoUpdate] API connectivity OK (wget)${NC}"
-    else
-      echo -e "${YELLOW}[AutoUpdate] API health check failed, trying direct version check...${NC}"
-    fi
+  local health_failure
+
+  if http_get "${API_BASE_URL}/health" "$temp_health_file" 10; then
+    echo -e "${GREEN}[AutoUpdate] API connectivity OK (${HTTP_CLIENT})${NC}"
+  elif [[ -z "$HTTP_CLIENT" ]]; then
+    echo -e "${RED}[AutoUpdate] No HTTP client available (need curl or wget)${NC}"
+    echo -e "${YELLOW}[AutoUpdate] Skipping update check${NC}"
     rm -f "$temp_health_file"
-  elif command -v curl >/dev/null 2>&1; then
-    if curl -s --max-time 10 "${API_BASE_URL}/health" >/dev/null 2>&1; then
-      echo -e "${GREEN}[AutoUpdate] API connectivity OK (curl)${NC}"
-    else
-      echo -e "${YELLOW}[AutoUpdate] API health check failed, trying direct version check...${NC}"
-    fi
+    return 0
   else
-    echo -e "${RED}[AutoUpdate] No HTTP client available (need wget or curl)${NC}"
-    echo -e "${YELLOW}[AutoUpdate] Skipping update check${NC}"
-    return 0
+    health_failure="${HTTP_ERROR:-HTTP ${HTTP_STATUS:-error}}"
+    printf "${YELLOW}[AutoUpdate] API health check failed (%s), trying direct version check...${NC}\n" \
+      "$(printf '%s' "$health_failure" | sanitize_text 120)"
   fi
-  
+  rm -f "$temp_health_file"
+
   # Get latest version from API
-  if ! latest_version=$(get_latest_version | tail -n 1); then
-    echo -e "${YELLOW}[AutoUpdate] Could not fetch latest version from API${NC}"
-    echo -e "${CYAN}[AutoUpdate] This could be due to:${NC}"
-    echo -e "${CYAN}  • Network connectivity issues${NC}"
-    echo -e "${CYAN}  • API server temporarily unavailable${NC}"
-    echo -e "${CYAN}  • Repository not found: ${REPO_OWNER}/${REPO_NAME}${NC}"
-    echo -e "${CYAN}  • API response format changed${NC}"
-    echo -e "${YELLOW}[AutoUpdate] Skipping update check${NC}"
+  if ! get_latest_version; then
+    echo -e "${YELLOW}[AutoUpdate] Could not fetch latest version from API, skipping update check${NC}"
     return 0
   fi
-  
+  latest_version="$LATEST_VERSION"
+
   if [[ -z "$latest_version" ]]; then
     echo -e "${YELLOW}[AutoUpdate] Could not determine latest version, skipping update${NC}"
     return 0

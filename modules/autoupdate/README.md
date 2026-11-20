@@ -160,6 +160,34 @@ Check the console output during startup for detailed information about:
 - File changes applied
 - Any errors encountered
 
+### When an Update Fails
+
+There is no separate log file. When a request fails, the module prints everything needed to find the cause to the console during startup: the request, the HTTP status, the error code and message returned by the API, and the request ID. The server starts anyway and keeps the version it had.
+
+```text
+[AutoUpdate] ✗ Fetching the update information failed
+[AutoUpdate]   Request:     https://api.tavuru.de/diff/Ym0T/pterodactyl-nginx-egg/v3.2.7/v3.2.8?zip=true
+[AutoUpdate]   HTTP status: 422
+[AutoUpdate]   API error:   versions_not_sequential
+[AutoUpdate]   Message:     ZIP archives require to_version to be a descendant of from_version
+[AutoUpdate]   Request ID:  4edd76ef-f19d-45b4-835c-70022189b0c3
+[AutoUpdate] → The installed version is not part of the history of the new version in the repository, [...]
+[AutoUpdate] ⚠ Update failed, continuing with current version
+```
+
+When you report a failed update, include these lines. The request ID points to the exact request in the API's log.
+
+| Output | Meaning | What to do |
+|---|---|---|
+| `Reason: Could not resolve host …`, `… timed out …` | The server can't reach the API | Check DNS and that outgoing HTTPS (port 443) to `api.tavuru.de` is allowed |
+| `versions_not_sequential` | The installed version is not part of the history of the new version, for example after a release tag was moved | Has to be fixed in the repository, please [report it](https://github.com/Ym0T/pterodactyl-nginx-egg/issues) |
+| `version_not_found` | The version in `/home/container/VERSION` is not a release | Check that the file contains a released version such as `v3.2.8` |
+| `zip_target_not_latest` | A newer version was released during the update | Nothing, the update is retried on the next restart |
+| `rate_limited`, `server_busy`, `github_unavailable`, HTTP 5xx | Temporary problem on the API side | Nothing, the update is retried on the next restart |
+| `diff_too_large`, `unsupported_change`, … | The update can't be packaged for automatic installation | Please [report it](https://github.com/Ym0T/pterodactyl-nginx-egg/issues) |
+
+Every error response of the API has the same format, see the [API documentation](https://github.com/Ym0T/github-version-api#endpoints).
+
 ### Manual Version Reset
 
 To reset version tracking:
@@ -177,7 +205,7 @@ echo "unknown" > /home/container/VERSION
 
 ## Module Dependencies
 
-- **curl**: For API requests and file downloads
+- **curl** (or **wget** as fallback): For API requests and file downloads
 - **unzip**: For extracting update packages  
 - **openssl/sha256sum/base64**: For verifying signed updates (without them, updates are refused)
 - **grep/cut**: For JSON parsing (lightweight approach)
