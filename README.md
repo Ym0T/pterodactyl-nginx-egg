@@ -13,7 +13,7 @@
 [![Docker Image](https://img.shields.io/badge/ghcr.io-ym0t%2Fpterodactyl--nginx--egg-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://github.com/Ym0T/pterodactyl-nginx-egg/pkgs/container/pterodactyl-nginx-egg)
 [![Pterodactyl](https://img.shields.io/badge/Pterodactyl-Egg-0E4688?style=for-the-badge)](https://pterodactyl.io)
 [![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)](https://nginx.org)
-[![PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4%20%7C%208.5-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/supported-versions.php)
+[![PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4%20%7C%208.5%20%7C%208.6-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/supported-versions.php)
 [![Architecture](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-555555?style=for-the-badge&logo=linux&logoColor=white)](#docker-images)
 
 </div>
@@ -50,6 +50,7 @@
 - 🗂️ Static / SPA mode: Run NGINX without PHP-FPM for Angular, React, Vue & co.  
 - 🖥️ Multi-arch support: AMD64 & ARM64  
 - 🎯 **Selectable PHP Versions:**
+  - ✅ 8.6
   - ✅ 8.5
   - ✅ 8.4  
   - ☑️ 8.3 (security-only)
@@ -76,6 +77,7 @@ All images are published to the GitHub Container Registry and support **AMD64** 
 
 | PHP | Image | Status |
 |-----|-------|--------|
+| 8.6 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.6-latest` | ✅ Active support |
 | 8.5 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.5-latest` | ✅ Active support |
 | 8.4 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.4-latest` | ✅ Active support |
 | 8.3 | `ghcr.io/ym0t/pterodactyl-nginx-egg:8.3-latest` | ☑️ Security fixes only |

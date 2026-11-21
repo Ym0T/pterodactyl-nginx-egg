@@ -88,7 +88,6 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-gettext \
         php${PHP_VERSION}-gmp \
         php${PHP_VERSION}-iconv \
-        php${PHP_VERSION}-igbinary \
         php${PHP_VERSION}-imagick \
         php${PHP_VERSION}-imap \
         php${PHP_VERSION}-intl \
@@ -121,9 +120,11 @@ RUN apt-get update && apt-get install -y \
         php${PHP_VERSION}-mailparse \
         php${PHP_VERSION}-inotify \
         php${PHP_VERSION}-maxminddb \
-        php${PHP_VERSION}-protobuf \
         php${PHP_VERSION}-dev \
-    # Optional packages (may not be available for all PHP versions)
+    # Optional packages (may not be available for all PHP versions,
+    # e.g. igbinary, protobuf and memcached were not yet packaged for PHP 8.6 at its release)
+    && apt-get install -y --no-install-recommends php${PHP_VERSION}-igbinary || true \
+    && apt-get install -y --no-install-recommends php${PHP_VERSION}-protobuf || true \
     && apt-get install -y --no-install-recommends php${PHP_VERSION}-memcache || true \
     && apt-get install -y --no-install-recommends php${PHP_VERSION}-memcached || true \
     && apt-get install -y --no-install-recommends php${PHP_VERSION}-opcache || true \
